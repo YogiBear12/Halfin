@@ -219,7 +219,7 @@ fun SeriesOverviewContent(
                                                         ).alpha(dimming),
                                                 ),
                                         interactionSource = interactionSource,
-                                        cardHeight = 120.dp,
+                                        cardHeight = 100.dp,
                                     )
                                 }
                             }
