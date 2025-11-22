@@ -34,6 +34,8 @@ hilt = "2.57.2"
 room = "2.8.4"
 material3 = "1.4.0"
 preferenceKtx = "1.2.1"
+libass = "0.3.0-rc05"
+palette = "1.0.0"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -102,6 +104,10 @@ slf4j2-timber = { module = "uk.kulikov:slf4j2-timber", version.ref = "slf4j2Timb
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+
+androidx-palette-ktx = { module = "androidx.palette:palette-ktx", version.ref = "palette" }
+
+libass-media3 = { module = "io.github.peerless2012:ass-media", version.ref = "libass" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

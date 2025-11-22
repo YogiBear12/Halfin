@@ -52,7 +52,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.damontecres.wholphin"
+        applicationId = "com.github.damontecres.wholphin.nanifin"
         minSdk = 25
         targetSdk = 36
         versionCode = getVersionCode()
@@ -207,6 +207,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.libass.media3)
 
     implementation(libs.coil.core)
     implementation(libs.coil.compose)
@@ -234,6 +235,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.preference.ktx)
     implementation(libs.androidx.room.testing)
+    implementation(libs.androidx.palette.ktx)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
 

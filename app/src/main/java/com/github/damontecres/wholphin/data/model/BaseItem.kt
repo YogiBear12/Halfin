@@ -21,6 +21,7 @@ data class BaseItem(
     val imageUrl: String?,
     val backdropImageUrl: String? = null,
     val logoImageUrl: String? = null,
+    val thumbImageUrl: String? = null,
 ) {
     val id get() = data.id
 
@@ -135,11 +136,23 @@ data class BaseItem(
                 } else {
                     api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
                 }
+            val thumbImageUrl =
+                if (dto.type == BaseItemKind.EPISODE) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.THUMB)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.THUMB)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.THUMB)
+                }
             return BaseItem(
                 dto,
                 primaryImageUrl,
                 backdropImageUrl,
                 logoImageUrl,
+                thumbImageUrl,
             )
         }
     }

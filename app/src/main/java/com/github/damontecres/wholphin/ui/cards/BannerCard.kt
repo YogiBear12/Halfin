@@ -56,8 +56,10 @@ fun BannerCard(
     cardHeight: Dp = 140.dp * .85f,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
+    fallbackImageUrl: String? = null, // Fallback to backdrop if primary image fails
 ) {
     var imageError by remember { mutableStateOf(false) }
+    var fallbackError by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
         onClick = onClick,
@@ -80,6 +82,15 @@ fun BannerCard(
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     onError = { imageError = true },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else if (!fallbackError && fallbackImageUrl.isNotNullOrBlank()) {
+                // Try fallback image (backdrop) if primary image failed or is missing
+                AsyncImage(
+                    model = fallbackImageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    onError = { fallbackError = true },
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {

@@ -88,6 +88,7 @@ fun GridCard(
                 watchedPercent = dto?.userData?.playedPercentage,
                 useFallbackText = false,
                 contentScale = imageContentScale,
+                fallbackImageUrl = item?.backdropImageUrl, // Fallback to backdrop if primary image fails
                 modifier =
                     Modifier
                         .fillMaxWidth()

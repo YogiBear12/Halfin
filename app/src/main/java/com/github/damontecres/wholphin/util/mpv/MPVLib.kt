@@ -29,10 +29,19 @@ import android.view.Surface
 
 @Suppress("unused")
 object MPVLib {
+    var loaded = false
+
     init {
         val libs = arrayOf("mpv", "player")
-        for (lib in libs) {
-            System.loadLibrary(lib)
+        try {
+            for (lib in libs) {
+                System.loadLibrary(lib)
+            }
+            loaded = true
+        } catch (e: UnsatisfiedLinkError) {
+            android.util.Log.e("MPVLib", "Failed to load native libraries", e)
+        } catch (e: SecurityException) {
+            android.util.Log.e("MPVLib", "Failed to load native libraries", e)
         }
     }
 
