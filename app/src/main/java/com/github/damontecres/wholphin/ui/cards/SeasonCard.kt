@@ -120,6 +120,7 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = AspectRatios.TALL,
+    fallbackImageUrl: String? = null, // Fallback to backdrop if primary image fails
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
@@ -172,6 +173,7 @@ fun SeasonCard(
                     unwatchedCount = unplayedItemCount,
                     watchedPercent = playedPercentage,
                     useFallbackText = false,
+                    fallbackImageUrl = fallbackImageUrl, // Fallback to backdrop if primary image fails
                     modifier =
                         Modifier
                             .fillMaxSize(),

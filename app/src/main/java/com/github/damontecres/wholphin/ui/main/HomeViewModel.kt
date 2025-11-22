@@ -175,7 +175,7 @@ class HomeViewModel
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, true) }
+                    .map { BaseItem.from(it, api, false) }
             return items
         }
 
@@ -201,7 +201,7 @@ class HomeViewModel
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, true) }
+                    .map { BaseItem.from(it, api, false) }
             return nextUp
         }
 

@@ -7,14 +7,22 @@ import androidx.annotation.OptIn
 import androidx.datastore.core.DataStore
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.peerless2012.ass.media.AssHandler
+import io.github.peerless2012.ass.media.factory.AssRenderersFactory
+import io.github.peerless2012.ass.media.kt.withAssMkvSupport
+import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
+import io.github.peerless2012.ass.media.type.AssRenderType
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
@@ -71,14 +79,37 @@ class PlayerFactory
                                 MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
                                 else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                             }
+
+                        val assHandler = AssHandler(AssRenderType.OVERLAY)
+                        val dataSourceFactory = DefaultDataSource.Factory(context)
+                        val extractorsFactory = DefaultExtractorsFactory()
+                        val assSubtitleParserFactory = AssSubtitleParserFactory(assHandler)
+                        val assExtractorsFactory =
+                            extractorsFactory.withAssMkvSupport(
+                                assSubtitleParserFactory,
+                                assHandler,
+                            )
+                        val mediaSourceFactory =
+                            DefaultMediaSourceFactory(
+                                dataSourceFactory,
+                                assExtractorsFactory,
+                            ).apply {
+                                setSubtitleParserFactory(assSubtitleParserFactory)
+                            }
+
+                        val renderersFactory =
+                            DefaultRenderersFactory(context)
+                                .setEnableDecoderFallback(true)
+                                .setExtensionRendererMode(rendererMode)
+                                .let { AssRenderersFactory(assHandler, it) }
+
                         ExoPlayer
                             .Builder(context)
-                            .setRenderersFactory(
-                                DefaultRenderersFactory(context)
-                                    .setEnableDecoderFallback(true)
-                                    .setExtensionRendererMode(rendererMode),
-                            ).build()
+                            .setRenderersFactory(renderersFactory)
+                            .setMediaSourceFactory(mediaSourceFactory)
+                            .build()
                             .apply {
+                                assHandler.init(this)
                                 playWhenReady = true
                             }
                     }
