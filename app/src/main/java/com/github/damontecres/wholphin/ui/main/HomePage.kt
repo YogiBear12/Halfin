@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.core.graphics.ColorUtils
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -40,14 +47,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.palette.graphics.Palette
 import androidx.tv.material3.MaterialTheme
+import android.graphics.Bitmap
 import androidx.tv.material3.Text
+import coil3.asDrawable
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.request.bitmapConfig
 import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
@@ -82,6 +96,8 @@ import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
+
+import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 
 @Composable
 fun HomePage(
@@ -125,8 +141,10 @@ fun HomePage(
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            val appTheme = preferences.appPreferences.interfacePreferences.appThemeColors
             HomePageContent(
                 watchingRows + latestRows,
+                appThemeColors = appTheme,
                 onClickItem = { position, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -164,6 +182,8 @@ fun HomePage(
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
+                contentStartPadding = 32.dp,
+                contentTopPadding = 32.dp,
             )
             dialog?.let { params ->
                 DialogPopup(
@@ -195,15 +215,19 @@ fun HomePage(
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
+    appThemeColors: AppThemeColors,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
+    contentStartPadding: androidx.compose.ui.unit.Dp = 16.dp,
+    contentTopPadding: androidx.compose.ui.unit.Dp = 12.dp,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val onBackdropChange = LocalBackdropHandler.current
     val firstRow =
         remember {
             homeRows
@@ -249,42 +273,64 @@ fun HomePageContent(
         backdropImageUrl = null
         delay(150)
         backdropImageUrl = focusedItem?.backdropImageUrl
+        onBackdropChange?.invoke(backdropImageUrl)
     }
+    
+    val isNanifin = appThemeColors == AppThemeColors.NANIFIN
+    var dynamicColorPrimary by remember { mutableStateOf(Color.Transparent) }
+    var dynamicColorSecondary by remember { mutableStateOf(Color.Transparent) }
+    
+    if (isNanifin) {
+        // Nanifin uses NavDrawer for background
+        LaunchedEffect(backdropImageUrl) {
+             onBackdropChange(backdropImageUrl)
+        }
+    } else {
+        // Non-Nanifin local extraction (if any) or other logic
+    }
+
     Box(modifier = modifier) {
-        val gradientColor = MaterialTheme.colorScheme.background
-        AsyncImage(
-            model =
-                ImageRequest
-                    .Builder(context)
-                    .data(backdropImageUrl)
-                    .transitionFactory(CrossFadeFactory(250.milliseconds))
-                    .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            alignment = Alignment.TopEnd,
-            modifier =
-                Modifier
-                    .fillMaxHeight(.7f)
-                    .fillMaxWidth(.7f)
-                    .alpha(.75f)
-                    .align(Alignment.TopEnd)
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, gradientColor),
-                                startY = size.height * .33f,
-                            ),
-                        )
-                        drawRect(
-                            Brush.horizontalGradient(
-                                colors = listOf(gradientColor, Color.Transparent),
-                                startX = 0f,
-                                endX = size.width * .5f,
-                            ),
-                        )
-                    },
-        )
+        val baseBackgroundColor = MaterialTheme.colorScheme.background
+        
+        // Legacy / Non-Nanifin Background Logic
+        if (!isNanifin) {
+            val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
+            val gradientColor by animateColorAsState(targetPrimary, label = "gradient")
+            
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(context)
+                        .data(backdropImageUrl)
+                        .transitionFactory(CrossFadeFactory(250.milliseconds))
+                        .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.TopEnd,
+                modifier =
+                    Modifier
+                        .fillMaxHeight(.7f)
+                        .fillMaxWidth(.7f)
+                        .alpha(.75f)
+                        .align(Alignment.TopEnd)
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, baseBackgroundColor),
+                                    startY = size.height * .33f,
+                                ),
+                            )
+                            drawRect(
+                                Brush.horizontalGradient(
+                                    colors = listOf(baseBackgroundColor, Color.Transparent),
+                                    startX = 0f,
+                                    endX = size.width * .5f,
+                                ),
+                            )
+                        },
+            )
+        }
 
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
@@ -293,17 +339,17 @@ fun HomePageContent(
                     Modifier
                         .fillMaxWidth(.6f)
                         .fillMaxHeight(.33f)
-                        .padding(16.dp),
+                        .padding(start = contentStartPadding, top = contentTopPadding, end = 16.dp, bottom = 16.dp),
             )
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding =
                     PaddingValues(
-                        start = 16.dp,
+                        start = contentStartPadding,
                         end = 16.dp,
                         top = 0.dp,
-                        bottom = Cards.height2x3,
+                        bottom = 120.dp,
                     ),
                 modifier = Modifier.focusRestorer(),
             ) {
@@ -369,10 +415,12 @@ fun HomePageContent(
                                             .fillMaxWidth()
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                        val isContinueOrNext = row.title == stringResource(R.string.continue_watching) || row.title == stringResource(R.string.next_up)
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
-                                            imageUrl = item?.imageUrl,
-                                            aspectRatio = AspectRatios.TALL,
+                                            imageUrl = if (isContinueOrNext) item?.thumbImageUrl else item?.imageUrl,
+                                            aspectRatio = if (isContinueOrNext) AspectRatios.WIDE else AspectRatios.TALL,
+                                            fallbackImageUrl = item?.backdropImageUrl, // Fallback to backdrop if primary image fails
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
@@ -410,7 +458,7 @@ fun HomePageContent(
                                                         }
                                                     },
                                             interactionSource = null,
-                                            cardHeight = Cards.height2x3,
+                                            cardHeight = if (isContinueOrNext) 120.dp else Cards.height2x3,
                                         )
                                     },
                                 )
@@ -451,6 +499,7 @@ fun HomePageHeader(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
+            Spacer(Modifier.weight(1f))
             item?.let {
                 val dto = item.data
                 val isEpisode = item.type == BaseItemKind.EPISODE
@@ -484,7 +533,7 @@ fun HomePageHeader(
                 title?.let {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -493,7 +542,7 @@ fun HomePageHeader(
                 subtitle?.let {
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

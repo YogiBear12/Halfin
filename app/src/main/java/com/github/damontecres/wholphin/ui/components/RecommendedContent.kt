@@ -107,9 +107,11 @@ fun RecommendedContent(
         LoadingState.Pending,
         -> LoadingPage()
 
-        LoadingState.Success ->
+        LoadingState.Success -> {
+            val appTheme = preferences.appPreferences.interfacePreferences.appThemeColors
             HomePageContent(
                 homeRows = rows,
+                appThemeColors = appTheme,
                 onClickItem = { _, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -120,6 +122,7 @@ fun RecommendedContent(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )
+        }
     }
     moreDialog.compose { (position, item) ->
         DialogPopup(

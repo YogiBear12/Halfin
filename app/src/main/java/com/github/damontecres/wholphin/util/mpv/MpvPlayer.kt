@@ -76,7 +76,7 @@ class MpvPlayer(
         ) { listener, eventFlags ->
             listener.onEvents(this@MpvPlayer, Player.Events(eventFlags))
         }
-    private val availableCommands: Player.Commands
+    private var availableCommands: Player.Commands = Player.Commands.EMPTY
     private val trackSelector = DefaultTrackSelector(context)
 
     private var mediaItem: MediaItem? = null
@@ -94,59 +94,75 @@ class MpvPlayer(
 
     init {
         Timber.v("config-dir=${context.filesDir.path}")
-        MPVLib.create(context)
-        MPVLib.setOptionString("config", "yes")
-        MPVLib.setOptionString("config-dir", context.filesDir.path)
+        if (MPVLib.loaded) {
+            try {
+                MPVLib.create(context)
+                MPVLib.setOptionString("config", "yes")
+                MPVLib.setOptionString("config-dir", context.filesDir.path)
 
-        if (enableHardwareDecoding) {
-            MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
-            MPVLib.setOptionString("vo", "gpu")
-        } else {
-            MPVLib.setOptionString("hwdec", "no")
-        }
-        MPVLib.setOptionString("gpu-context", "android")
+                if (enableHardwareDecoding) {
+                    MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
+                    MPVLib.setOptionString("vo", "gpu")
+                } else {
+                    MPVLib.setOptionString("hwdec", "no")
+                }
+                MPVLib.setOptionString("gpu-context", "android")
 
-        MPVLib.setOptionString("opengl-es", "yes")
-        MPVLib.setOptionString("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
-        val cacheMegs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) 64 else 32
-        MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
-        MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
+                MPVLib.setOptionString("opengl-es", "yes")
+                MPVLib.setOptionString("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
+                val cacheMegs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) 64 else 32
+                MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
+                MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
-        MPVLib.init()
+                MPVLib.init()
 
-        MPVLib.setOptionString("force-window", "no")
-        MPVLib.setOptionString("idle", "yes")
+                MPVLib.setOptionString("force-window", "no")
+                MPVLib.setOptionString("idle", "yes")
 //        MPVLib.setOptionString("sub-fonts-dir", File(context.filesDir, "fonts").absolutePath)
 
-        MPVLib.addObserver(this)
-        MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
+                MPVLib.addObserver(this)
+                MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
 
-        availableCommands =
-            Player.Commands
-                .Builder()
-                .addAll(
-                    COMMAND_PLAY_PAUSE,
-                    COMMAND_PREPARE,
-                    COMMAND_STOP,
-                    COMMAND_SET_SPEED_AND_PITCH,
-                    COMMAND_SET_SHUFFLE_MODE,
-                    COMMAND_SET_REPEAT_MODE,
-                    COMMAND_GET_CURRENT_MEDIA_ITEM,
-                    COMMAND_GET_TIMELINE,
-                    COMMAND_GET_METADATA,
-//                    COMMAND_SET_PLAYLIST_METADATA,
-                    COMMAND_SET_MEDIA_ITEM,
-//                    COMMAND_CHANGE_MEDIA_ITEMS,
-                    COMMAND_GET_TRACKS,
-//                    COMMAND_GET_AUDIO_ATTRIBUTES,
-//                    COMMAND_SET_AUDIO_ATTRIBUTES,
-//                    COMMAND_GET_VOLUME,
-//                    COMMAND_SET_VOLUME,
-                    COMMAND_SET_VIDEO_SURFACE,
-//                    COMMAND_GET_TEXT,
-                    COMMAND_RELEASE,
-                ).build()
-        trackSelector.init(this, DefaultBandwidthMeter.getSingletonInstance(context))
+                availableCommands =
+                    Player.Commands
+                        .Builder()
+                        .addAll(
+                            COMMAND_PLAY_PAUSE,
+                            COMMAND_PREPARE,
+                            COMMAND_STOP,
+                            COMMAND_SET_SPEED_AND_PITCH,
+                            COMMAND_SET_SHUFFLE_MODE,
+                            COMMAND_SET_REPEAT_MODE,
+                            COMMAND_GET_CURRENT_MEDIA_ITEM,
+                            COMMAND_GET_TIMELINE,
+                            COMMAND_GET_METADATA,
+                            //                    COMMAND_SET_PLAYLIST_METADATA,
+                            COMMAND_SET_MEDIA_ITEM,
+                            //                    COMMAND_CHANGE_MEDIA_ITEMS,
+                            COMMAND_GET_TRACKS,
+                            //                    COMMAND_GET_AUDIO_ATTRIBUTES,
+                            //                    COMMAND_SET_AUDIO_ATTRIBUTES,
+                            //                    COMMAND_GET_VOLUME,
+                            //                    COMMAND_SET_VOLUME,
+                            COMMAND_SET_VIDEO_SURFACE,
+                            //                    COMMAND_GET_TEXT,
+                            COMMAND_RELEASE,
+                        ).build()
+                trackSelector.init(this, DefaultBandwidthMeter.getSingletonInstance(context))
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to initialize MPV")
+                throw RuntimeException(e) // Re-throw or handle gracefully?
+                // Since MpvPlayer constructor expects a working player, failing here is probably correct if we can't fallback.
+                // But to prevent crash, maybe we should just leave it in a broken state?
+                // The user asked to fix the crash. Throwing RuntimeException will still crash if not caught upstack.
+                // But PlayerFactory catches nothing.
+                // So I will set a flag or just log and let it be empty/broken?
+                availableCommands = Player.Commands.EMPTY
+            }
+        } else {
+            Timber.e("MPV library not loaded")
+            availableCommands = Player.Commands.EMPTY
+        }
     }
 
     override fun getApplicationLooper(): Looper = looper

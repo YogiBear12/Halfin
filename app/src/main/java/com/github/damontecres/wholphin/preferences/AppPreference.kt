@@ -427,7 +427,7 @@ sealed interface AppPreference<T> {
         val ThemeColors =
             AppChoicePreference<AppThemeColors>(
                 title = R.string.app_theme,
-                defaultValue = AppThemeColors.PURPLE,
+                defaultValue = AppThemeColors.NANIFIN,
                 getter = { it.interfacePreferences.appThemeColors },
                 setter = { prefs, value ->
                     prefs.updateInterfacePreferences { appThemeColors = value }

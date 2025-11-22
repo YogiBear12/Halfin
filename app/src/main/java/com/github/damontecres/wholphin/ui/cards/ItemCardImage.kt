@@ -53,8 +53,10 @@ fun ItemCardImage(
     modifier: Modifier = Modifier,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    fallbackImageUrl: String? = null, // Fallback to backdrop if primary image fails
 ) {
     var imageError by remember { mutableStateOf(false) }
+    var fallbackError by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
         if (!imageError && imageUrl.isNotNullOrBlank()) {
             AsyncImage(
@@ -65,6 +67,22 @@ fun ItemCardImage(
                 onError = {
                     logCoilError(imageUrl, it.result)
                     imageError = true
+                },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .align(Alignment.TopCenter),
+            )
+        } else if (!fallbackError && fallbackImageUrl.isNotNullOrBlank()) {
+            // Try fallback image (backdrop) if primary image failed or is missing
+            AsyncImage(
+                model = fallbackImageUrl,
+                contentDescription = name,
+                contentScale = contentScale,
+                alignment = Alignment.Center,
+                onError = {
+                    logCoilError(fallbackImageUrl, it.result)
+                    fallbackError = true
                 },
                 modifier =
                     Modifier

@@ -122,6 +122,7 @@ fun BannerItemRow(
             onLongClick = onLongClick,
             modifier = modifier,
             interactionSource = null,
+            fallbackImageUrl = item?.backdropImageUrl, // Fallback to backdrop if primary image fails
         )
     },
     focusPair = focusPair,

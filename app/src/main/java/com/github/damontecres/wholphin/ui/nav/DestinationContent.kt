@@ -245,9 +245,9 @@ fun CollectionFolder(
 
         CollectionType.LIVETV ->
             CollectionFolderLiveTv(
-                preferences = preferences,
-                destination = destination,
-                modifier = modifier,
+                preferences,
+                destination,
+                modifier,
             )
 
         CollectionType.HOMEVIDEOS,
