@@ -224,6 +224,7 @@ fun SeriesOverviewContent(
                                             episode?.data?.userData?.playedPercentage
                                                 ?: 0.0,
                                         onClick = { if (episode != null) onClick.invoke(episode) },
+                                        fallbackImageUrl = episode?.backdropImageUrl, // Fallback to backdrop if primary image fails
                                         onLongClick = {
                                             if (episode != null) {
                                                 onLongClick.invoke(

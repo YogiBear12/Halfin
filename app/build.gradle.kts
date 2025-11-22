@@ -2,6 +2,7 @@ import com.google.protobuf.gradle.id
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.DuplicateRule
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.ByteArrayOutputStream
 import java.util.Base64
 import java.util.Properties
 
@@ -21,28 +22,70 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
-val gitTags =
-    providers
-        .exec { commandLine("git", "tag", "--list", "v*", "p*") }
-        .standardOutput.asText
-        .get()
+fun getVersionCode(): Int {
+    val stdout = ByteArrayOutputStream()
+    exec {
+        commandLine = listOf("git", "tag", "--list", "v*", "p*")
+        standardOutput = stdout
+    }
+    val tagCount = stdout
+        .toString()
+        .trim()
+        .lines()
+        .size
+    
+    // Base offset: 0.3.4-1 had versionCode 30, so ensure we start from at least 31
+    // This ensures 0.3.4-2 and future versions can install over 0.3.4-1
+    val baseOffset = 31
+    return maxOf(tagCount, baseOffset)
+}
 
-val gitDescribe =
-    providers
-        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
-        .standardOutput.asText
-        .getOrElse("v0.0.0")
+fun getAppVersion(): String {
+    // First try to get exact tag match (if we're on a tagged commit)
+    val exactTagStdout = ByteArrayOutputStream()
+    try {
+        exec {
+            commandLine = listOf("git", "describe", "--tags", "--exact-match", "--match=v*")
+            standardOutput = exactTagStdout
+            isIgnoreExitValue = true
+        }
+        val exactTag = exactTagStdout.toString().trim()
+        if (exactTag.isNotBlank()) {
+            return exactTag.removePrefix("v")
+        }
+    } catch (e: Exception) {
+        // If exact match fails, fall through to long format
+    }
+    
+    // Otherwise, use the long format with commit info
+    val stdout = ByteArrayOutputStream()
+    try {
+        exec {
+            commandLine = listOf("git", "describe", "--tags", "--long", "--match=v*")
+            standardOutput = stdout
+            isIgnoreExitValue = true
+        }
+        val version = stdout.toString().trim()
+        return if (version.isNotBlank()) {
+            version.removePrefix("v")
+        } else {
+            "0.0.0"
+        }
+    } catch (e: Exception) {
+        return "0.0.0"
+    }
+}
 
 android {
     namespace = "com.github.damontecres.wholphin"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.damontecres.wholphin"
+        applicationId = "com.github.yogi.halfin"
         minSdk = 23
         targetSdk = 36
-        versionCode = gitTags.trim().lines().size
-        versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
+        versionCode = getVersionCode()
+        versionName = getAppVersion()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -65,11 +108,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_11
-            javaParameters = true
-        }
+    kotlinOptions {
+        jvmTarget = "11"
     }
     buildFeatures {
         buildConfig = true
@@ -130,7 +170,7 @@ android {
                 .forEach { output ->
                     val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
                     val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
+                        "Halfin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
                     output.outputFileName = outputFileName
                 }
         }
@@ -196,6 +236,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.libass.media3)
 
     implementation(libs.coil.core)
     implementation(libs.coil.compose)
