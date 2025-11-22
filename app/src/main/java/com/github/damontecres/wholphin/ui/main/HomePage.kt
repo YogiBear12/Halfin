@@ -458,7 +458,7 @@ fun HomePageContent(
                                                         }
                                                     },
                                             interactionSource = null,
-                                            cardHeight = if (isContinueOrNext) 120.dp else Cards.height2x3,
+                                            cardHeight = if (isContinueOrNext) 100.dp else Cards.height2x3,
                                         )
                                     },
                                 )

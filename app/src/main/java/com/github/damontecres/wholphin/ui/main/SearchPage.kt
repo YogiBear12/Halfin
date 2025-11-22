@@ -277,7 +277,7 @@ fun SearchPage(
                         onClick.invoke()
                     },
                     onLongClick = onLongClick,
-                    imageHeight = 140.dp,
+                    imageHeight = 100.dp, // Match home screen episode card size
                     modifier =
                         mod
                             .padding(horizontal = 8.dp)

@@ -66,7 +66,7 @@ val SlimItemFields =
     )
 
 object Cards {
-    val height2x3 = 172.dp
+    val height2x3 = 160.dp // Reduced from 180.dp to match Plex sizing
     val playedPercentHeight = 6.dp
 }
 
