@@ -130,7 +130,6 @@ suspend fun upgradeApp(
     if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
         PreferencesViewModel.resetSubtitleSettings(appPreferences)
     }
-<<<<<<< HEAD
     if (previous.isEqualOrBefore(Version.fromString("0.3.2-4-g0"))) {
         appPreferences.updateData {
             it.updateSubtitlePreferences {
