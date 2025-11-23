@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -64,9 +65,15 @@ fun CollectionFolderMovie(
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
+    val onBackdropChange = LocalBackdropHandler.current
+    
     LaunchedEffect(selectedTabIndex) {
         logTab("movie", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
+        // Clear backdrop when navigating to Library, Collections, or Genres tabs
+        if (selectedTabIndex in 1..3) {
+            onBackdropChange(null)
+        }
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }

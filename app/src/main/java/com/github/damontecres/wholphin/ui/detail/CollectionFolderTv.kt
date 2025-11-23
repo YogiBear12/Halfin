@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -63,9 +64,15 @@ fun CollectionFolderTv(
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
+    val onBackdropChange = LocalBackdropHandler.current
+    
     LaunchedEffect(selectedTabIndex) {
         logTab("tv", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
+        // Clear backdrop when navigating to Library or Genres tabs
+        if (selectedTabIndex in 1..2) {
+            onBackdropChange(null)
+        }
     }
 
     val onClickItem = { item: BaseItem ->

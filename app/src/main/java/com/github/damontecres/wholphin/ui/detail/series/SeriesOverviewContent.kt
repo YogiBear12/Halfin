@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -141,6 +142,9 @@ fun SeriesOverviewContent(
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
+            }
+            item {
+                Spacer(Modifier.height(8.dp)) // Push content below tabs down
             }
             item {
                 series.name?.let {
