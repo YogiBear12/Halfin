@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ fun OverviewText(
             Color.Unspecified
         }
     Box(
+        contentAlignment = Alignment.TopStart, // Ensure content aligns to top-start, not center
         modifier =
             modifier
                 .background(bgColor, shape = RoundedCornerShape(8.dp))
@@ -63,8 +65,8 @@ fun OverviewText(
             overflow = TextOverflow.Ellipsis,
             modifier =
                 Modifier
-                    .padding(8.dp)
-                    .height(textBoxHeight),
+                    .padding(8.dp) // Restore full padding including left 8dp
+                    .then(if (textBoxHeight != Dp.Unspecified) Modifier.height(textBoxHeight) else Modifier),
         )
     }
 }

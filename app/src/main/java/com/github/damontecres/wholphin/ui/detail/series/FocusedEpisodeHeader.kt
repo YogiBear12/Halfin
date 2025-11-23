@@ -3,7 +3,9 @@ package com.github.damontecres.wholphin.ui.detail.series
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,14 +38,23 @@ fun FocusedEpisodeHeader(
     ) {
         Text(
             text = dto?.episodeTitle ?: dto?.name ?: "",
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium, // Changed from titleLarge to titleMedium to match subtitle style from HomePageHeader
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier,
+            modifier = Modifier.padding(start = 8.dp),
         )
+        // Rating and details in the same row (match MovieDetailsHeader)
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 8.dp),
         ) {
+            dto?.communityRating?.let {
+                SimpleStarRating(
+                    it,
+                    Modifier.height(20.dp),
+                )
+            }
             val details =
                 buildList {
                     dto?.seasonEpisode?.let(::add)
@@ -58,24 +69,18 @@ fun FocusedEpisodeHeader(
                     dto?.officialRating?.let(::add)
                     dto?.timeRemaining?.roundMinutes?.let { add("$it left") }
                 }
-            DotSeparatedRow(
-                texts = details,
-                textStyle = MaterialTheme.typography.titleSmall,
-            )
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SimpleStarRating(
-                dto?.communityRating,
-                Modifier.height(20.dp),
-            )
+            if (details.isNotEmpty()) {
+                DotSeparatedRow(
+                    texts = details,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                )
+            }
         }
         OverviewText(
             overview = dto?.overview ?: "",
             maxLines = 3,
             onClick = overviewOnClick,
+            modifier = Modifier.fillMaxWidth(0.7f).padding(start = 0.dp), // Keep 0.dp start padding as OverviewText has internal padding
         )
     }
 }
