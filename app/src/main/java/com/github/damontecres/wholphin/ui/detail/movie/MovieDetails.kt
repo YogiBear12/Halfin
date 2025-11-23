@@ -4,9 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -45,6 +51,8 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
+import com.github.damontecres.wholphin.data.model.chooseSource
+import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -54,15 +62,17 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.chooseStream
+import com.github.damontecres.wholphin.ui.components.TitleValueText
+import com.github.damontecres.wholphin.ui.components.chooseStream as chooseStreamDialog
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
+import com.github.damontecres.wholphin.ui.getAudioDisplay
+import com.github.damontecres.wholphin.ui.getSubtitleDisplay
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -72,17 +82,19 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -133,16 +145,10 @@ fun MovieDetails(
         )
 
     when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state)
-        }
-
+        is LoadingState.Error -> ErrorMessage(state)
         LoadingState.Loading,
         LoadingState.Pending,
-        -> {
-            LoadingPage()
-        }
-
+        -> LoadingPage()
         LoadingState.Success -> {
             item?.let { movie ->
                 LifecycleStartEffect(destination.itemId) {
@@ -188,7 +194,6 @@ fun MovieDetails(
                             ItemDetailsDialogInfo(
                                 title = movie.name ?: context.getString(R.string.unknown),
                                 overview = movie.data.overview,
-                                genres = movie.data.genres.orEmpty(),
                                 files = movie.data.mediaSources.orEmpty(),
                             )
                     },
@@ -203,8 +208,8 @@ fun MovieDetails(
                                         item = movie,
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
-                                        seriesId = null,
-                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
+                                        series = null,
+                                        sourceId = chosenStreams?.sourceId,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -221,37 +226,25 @@ fun MovieDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            viewModel.streamChoiceService
-                                                .chooseSource(
-                                                    movie.data,
-                                                    chosenStreams?.itemPlayback,
-                                                )?.let { source ->
-                                                    chooseVersion =
-                                                        chooseStream(
-                                                            context = context,
-                                                            streams = source.mediaStreams.orEmpty(),
-                                                            type = type,
-                                                            onClick = { trackIndex ->
-                                                                viewModel.saveTrackSelection(
-                                                                    movie,
-                                                                    chosenStreams?.itemPlayback,
-                                                                    trackIndex,
-                                                                    type,
-                                                                )
-                                                            },
-                                                        )
-                                                }
-                                        },
-                                        onShowOverview = {
-                                            overviewDialog =
-                                                ItemDetailsDialogInfo(
-                                                    title =
-                                                        movie.name
-                                                            ?: context.getString(R.string.unknown),
-                                                    overview = movie.data.overview,
-                                                    genres = movie.data.genres.orEmpty(),
-                                                    files = movie.data.mediaSources.orEmpty(),
-                                                )
+                                            chooseSource(
+                                                movie.data,
+                                                chosenStreams?.itemPlayback,
+                                            )?.let { source ->
+                                                chooseVersion =
+                                                    chooseStreamDialog(
+                                                        context = context,
+                                                        streams = source.mediaStreams.orEmpty(),
+                                                        type = type,
+                                                        onClick = { trackIndex ->
+                                                            viewModel.saveTrackSelection(
+                                                                movie,
+                                                                chosenStreams?.itemPlayback,
+                                                                trackIndex,
+                                                                type,
+                                                            )
+                                                        },
+                                                    )
+                                            }
                                         },
                                     ),
                             )
@@ -389,26 +382,37 @@ fun MovieDetailsContent(
     var position by rememberInt(0)
     val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val dto = movie.data
+    val backdropImageUrl = movie.backdropImageUrl
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val onBackdropChange = LocalBackdropHandler.current
+    
+    // Set backdrop URL when movie loads
+    LaunchedEffect(backdropImageUrl) {
+        onBackdropChange(backdropImageUrl)
+    }
+    
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        DetailsBackdropImage(movie)
+        // Backdrop is now handled by NavDrawer via LocalBackdropHandler
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp), // Reduced from 8.dp to match homepage
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
+                Spacer(Modifier.height(64.dp)) // Match homepage top spacing
+            }
+            item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .bringIntoViewRequester(bringIntoViewRequester),
+                            .bringIntoViewRequester(bringIntoViewRequester)
+                            .padding(bottom = 24.dp),
                 ) {
                     MovieDetailsHeader(
                         preferences = preferences,
@@ -416,36 +420,74 @@ fun MovieDetailsContent(
                         chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = 32.dp, bottom = 16.dp),
+                        Modifier
+                            .fillMaxWidth(.6f) // Match homepage width
+                            .fillMaxHeight(.42f) // Match homepage header height
+                            .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Reduced top padding to 8.dp
                     )
-                    ExpandablePlayButtons(
-                        resumePosition = resumePosition,
-                        watched = dto.userData?.played ?: false,
-                        favorite = dto.userData?.isFavorite ?: false,
-                        playOnClick = {
-                            position = HEADER_ROW
-                            playOnClick.invoke(it)
-                        },
-                        moreOnClick = moreOnClick,
-                        watchOnClick = watchOnClick,
-                        favoriteOnClick = favoriteOnClick,
-                        buttonOnFocusChanged = {
-                            if (it.isFocused) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically, // Middle align with buttons
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        ExpandablePlayButtons(
+                            resumePosition = resumePosition,
+                            watched = dto.userData?.played ?: false,
+                            favorite = dto.userData?.isFavorite ?: false,
+                            playOnClick = {
                                 position = HEADER_ROW
-                                scope.launch(ExceptionHandler()) {
-                                    bringIntoViewRequester.bringIntoView()
+                                playOnClick.invoke(it)
+                            },
+                            moreOnClick = moreOnClick,
+                            watchOnClick = watchOnClick,
+                            favoriteOnClick = favoriteOnClick,
+                            buttonOnFocusChanged = {
+                                if (it.isFocused) {
+                                    position = HEADER_ROW
+                                    scope.launch(ExceptionHandler()) {
+                                        bringIntoViewRequester.bringIntoView()
+                                    }
                                 }
-                            }
-                        },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                                .focusRequester(focusRequesters[HEADER_ROW]),
-                    )
+                            },
+                            modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
+                        )
+                        
+                        // Technical details middle-aligned with buttons row
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            chooseStream(movie.data, chosenStreams?.itemPlayback, MediaStreamType.VIDEO, preferences)
+                                ?.displayTitle
+                                ?.let {
+                                    TitleValueText(
+                                        stringResource(R.string.video),
+                                        it,
+                                        modifier = Modifier.widthIn(max = 160.dp),
+                                    )
+                                }
+                            val audioDisplay = getAudioDisplay(movie.data, chosenStreams, preferences)
+                            audioDisplay
+                                ?.let {
+                                    TitleValueText(
+                                        stringResource(R.string.audio),
+                                        it,
+                                        modifier = Modifier.widthIn(max = 200.dp),
+                                    )
+                                }
+
+                            getSubtitleDisplay(movie.data, chosenStreams)
+                                ?.let {
+                                    if (it.isNotNullOrBlank()) {
+                                        TitleValueText(
+                                            stringResource(R.string.subtitles),
+                                            it,
+                                            modifier = Modifier.widthIn(max = 160.dp),
+                                        )
+                                    }
+                                }
+                        }
+                    }
                 }
             }
             if (people.isNotEmpty()) {
@@ -564,8 +606,9 @@ fun TrailerRow(
     ) {
         Text(
             text = stringResource(R.string.trailers),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 8.dp),
         )
         LazyRow(
             state = state,
@@ -584,7 +627,7 @@ fun TrailerRow(
                         Modifier
                     }
                 when (item) {
-                    is LocalTrailer -> {
+                    is LocalTrailer ->
                         SeasonCard(
                             item = item.baseItem,
                             onClick = { onClickTrailer.invoke(item) },
@@ -594,7 +637,6 @@ fun TrailerRow(
                             showImageOverlay = false,
                             modifier = cardModifier,
                         )
-                    }
 
                     is RemoteTrailer -> {
                         val subtitle =

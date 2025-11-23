@@ -71,6 +71,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -517,6 +518,12 @@ fun NavDrawer(
             
             // Only show backdrop if URL is not null - disappears when moving off item
             if (backdropImageUrl != null) {
+                // Animate backdrop opacity based on drawer state - more transparent when drawer is open
+                val backdropAlpha by animateFloatAsState(
+                    targetValue = if (drawerState.isOpen) 0.7f else 0.95f,
+                    animationSpec = tween(300),
+                    label = "backdropAlpha"
+                )
                 AsyncImage(
                     model =
                     ImageRequest
@@ -539,8 +546,8 @@ fun NavDrawer(
                         .align(Alignment.TopEnd)
                         .fillMaxWidth(0.7f) // Occupy 70% width
                         .aspectRatio(1.77f) // 16:9 aspect ratio
-                        .alpha(0.95f) // Slight transparency to allow background colors to show through
-                        .graphicsLayer { alpha = 0.95f }
+                        .alpha(backdropAlpha) // Dynamic transparency - more transparent when drawer is open
+                        .graphicsLayer { alpha = backdropAlpha }
                         .drawWithContent {
                             // Draw image content first
                             drawContent()
@@ -602,7 +609,7 @@ fun NavDrawer(
                                     ),
                                 )
                             },
-                            modifier = Modifier.padding(start = drawerPadding),
+                            modifier = Modifier, // Removed drawerPadding as it's now handled by Column padding
                         )
                         LazyColumn(
                             state = listState,
@@ -620,8 +627,7 @@ fun NavDrawer(
                                             focusRequester.tryRequestFocus()
                                         }
                                     }
-                                }.fillMaxHeight()
-                                .padding(start = drawerPadding),
+                                }.fillMaxHeight(), // Removed drawerPadding as it's now handled by Column padding
                         ) {
                             item {
                                 val interactionSource = remember { MutableInteractionSource() }
@@ -833,6 +839,7 @@ fun NavigationDrawerScope.IconNavItem(
             modifier = Modifier,
             text = text,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -912,6 +919,7 @@ fun NavigationDrawerScope.NavItem(
             modifier = Modifier,
             text = library.name(context),
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

@@ -1,18 +1,25 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -23,15 +30,16 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.GenreText
-import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
+import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
+import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
-import com.github.damontecres.wholphin.util.ExceptionHandler
-import kotlinx.coroutines.launch
+import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.timeRemaining
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PersonKind
+import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
 fun MovieDetailsHeader(
@@ -45,76 +53,97 @@ fun MovieDetailsHeader(
     val dto = movie.data
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier,
+    
+    // Match homepage structure exactly: Box with fillMaxHeight(.42f), Column with fillMaxSize
+    Box(
+        modifier = modifier, // Modifier already has fillMaxHeight(.42f) applied from caller
     ) {
-        // Title
-        Text(
-            text = movie.name ?: "",
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth(.75f),
-        )
-
         Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth(.60f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            val padding = 4.dp
-            MovieQuickDetails(dto, Modifier.padding(bottom = padding))
+            
+            // Title
+            Text(
+                text = movie.name ?: "",
+                color = MaterialTheme.colorScheme.onBackground, // Match homepage: onBackground instead of onSurface
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 8.dp), // Add 8dp left padding to align with summary text
+            )
 
-            dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(bottom = padding))
+            // Rating and year with dot separator
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 8.dp), // Add 8dp left padding to align with summary text
+            ) {
+                dto.communityRating?.let {
+                    SimpleStarRating(
+                        it,
+                        Modifier.height(20.dp),
+                    )
+                }
+                val details =
+                    buildList {
+                        dto.productionYear?.let { add(it.toString()) }
+                        val duration = dto.runTimeTicks?.ticks
+                        duration
+                            ?.roundMinutes
+                            ?.toString()
+                            ?.let {
+                                add(it)
+                            }
+                        dto.officialRating?.let(::add)
+                        dto.timeRemaining?.roundMinutes?.let { add("$it left") }
+                    }
+                if (details.isNotEmpty()) {
+                    DotSeparatedRow(
+                        texts = details,
+                        textStyle = MaterialTheme.typography.bodyLarge, // Match homepage: bodyLarge instead of titleMedium
+                        modifier = Modifier,
+                    )
+                }
             }
 
-            VideoStreamDetails(
-                chosenStreams = chosenStreams,
-                modifier = Modifier.padding(bottom = padding),
-            )
-            dto.taglines?.firstOrNull()?.let { tagline ->
+            // Genres (comma separated)
+            dto.genres?.letNotEmpty {
                 Text(
-                    text = tagline,
+                    text = it.joinToString(", "),
                     style = MaterialTheme.typography.bodyLarge,
-                    fontStyle = FontStyle.Italic,
-                    modifier = Modifier,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 8.dp), // Add 8dp left padding to align with summary text
                 )
             }
 
-            // Description
+            // Description (4 lines for movie details) - match homepage: 0.7f width, no padding
             dto.overview?.let { overview ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val focused = interactionSource.collectIsFocusedAsState().value
+                LaunchedEffect(focused) {
+                    if (focused) bringIntoViewRequester.bringIntoView()
+                }
                 OverviewText(
                     overview = overview,
-                    maxLines = 3,
+                    maxLines = 4,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
-                    modifier =
-                        Modifier.onFocusChanged {
-                            if (it.isFocused) {
-                                scope.launch(ExceptionHandler()) {
-                                    bringIntoViewRequester.bringIntoView()
-                                }
-                            }
-                        },
+                    interactionSource = interactionSource,
+                    modifier = Modifier.fillMaxWidth(0.7f).padding(0.dp), // Match homepage exactly
                 )
             }
-
-            val directorName =
-                remember(movie.data.people) {
-                    movie.data.people
-                        ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
-                        ?.joinToString(", ") { it.name!! }
-                }
-
-            directorName
+            
+            // Directed by (different size than summary)
+            movie.data.people
+                ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
+                ?.joinToString(", ") { it.name!! }
                 ?.let {
                     Text(
                         text = stringResource(R.string.directed_by, it),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = 8.dp), // Add 8dp left padding to align with summary text
                     )
                 }
         }

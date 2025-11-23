@@ -153,6 +153,8 @@ fun RecommendedContent(
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
+                contentStartPadding = 16.dp, // Match homepage padding
+                contentTopPadding = 24.dp,
             )
         }
     }

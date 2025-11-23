@@ -5,8 +5,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,20 +78,24 @@ fun CollectionFolderTv(
     Column(
         modifier = modifier,
     ) {
-        AnimatedVisibility(
-            showHeader,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
+        Box(
+            modifier = Modifier.height(64.dp), // Fixed height to prevent content shifting
         ) {
-            TabRow(
-                selectedTabIndex = selectedTabIndex,
-                modifier =
-                    Modifier
-                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
-                        .focusRequester(firstTabFocusRequester),
-                tabs = tabs,
-                onClick = { selectedTabIndex = it },
-            )
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showHeader,
+                enter = slideInVertically() + fadeIn(),
+                exit = slideOutVertically() + fadeOut(),
+            ) {
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    modifier =
+                        Modifier
+                            .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
+                            .focusRequester(firstTabFocusRequester),
+                    tabs = tabs,
+                    onClick = { selectedTabIndex = it },
+                )
+            }
         }
         when (selectedTabIndex) {
             // Recommended
@@ -102,7 +108,6 @@ fun CollectionFolderTv(
                     },
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                 )
