@@ -322,7 +322,7 @@ fun NavDrawer(
     val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else 40.dp)
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
     val appTheme = preferences.appPreferences.interfacePreferences.appThemeColors
-    val isNanifin = appTheme == AppThemeColors.NANIFIN
+    val isPlexperience = appTheme == AppThemeColors.PLEXPERIENCE
     
     // Backdrop state lifted to NavDrawer
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
@@ -330,7 +330,7 @@ fun NavDrawer(
     var dynamicColorSecondary by remember { mutableStateOf(Color.Transparent) }
     var dynamicColorTertiary by remember { mutableStateOf(Color.Transparent) }
 
-    if (isNanifin) {
+    if (isPlexperience) {
         LaunchedEffect(backdropImageUrl) {
             // Don't reset colors immediately - keep previous colors visible during loading
             // Only update colors after new backdrop is loaded and colors are extracted
@@ -410,14 +410,22 @@ fun NavDrawer(
                     timber.log.Timber.d("Palette: Vibrant=%X, DarkVibrant=%X, LightVibrant=%X, Muted=%X, DarkMuted=%X, LightMuted=%X, Dominant=%X", 
                         vibrant?.rgb, darkVibrant?.rgb, lightVibrant?.rgb, muted?.rgb, darkMuted?.rgb, lightMuted?.rgb, dominant?.rgb)
                 }
+            } else {
+                // Set generic dark/muted colors when backdrop is null (Library/Collections/Genres tabs)
+                // Using theme colors from PlexperienceThemeColors: surfaceContainerDark, surfaceContainerHighDark, surfaceBrightDark
+                val genericPrimary = Color(0xFF1E1F25) // surfaceContainerDark
+                val genericSecondary = Color(0xFF292A2F) // surfaceContainerHighDark
+                val genericTertiary = Color(0xFF38393F) // surfaceBrightDark
+                
+                dynamicColorPrimary = genericPrimary.copy(alpha = 0.4f)
+                dynamicColorSecondary = genericSecondary.copy(alpha = 0.4f)
+                dynamicColorTertiary = genericTertiary.copy(alpha = 0.35f)
             }
-            // Note: We don't reset colors to Transparent when backdropImageUrl becomes null
-            // This keeps the previous colors visible, matching Plex's behavior
         }
     }
 
     val drawerBackground by animateColorAsState(
-        if (isNanifin) {
+        if (isPlexperience) {
             if (drawerState.isOpen) {
                 Color.Black.copy(alpha = 0.8f)
             } else {
@@ -435,7 +443,7 @@ fun NavDrawer(
 
     Box(modifier = modifier.fillMaxSize()) {
         // Background Rendering (Behind content, and extending behind drawer)
-        if (isNanifin) {
+        if (isPlexperience) {
             val baseBackgroundColor = MaterialTheme.colorScheme.background
 
             val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
@@ -589,7 +597,7 @@ fun NavDrawer(
                         Modifier
                             .fillMaxHeight()
                             .width(drawerWidth)
-                            .ifElse(!isNanifin, Modifier.background(drawerBackground)), // Only apply solid background if NOT Nanifin
+                            .ifElse(!isPlexperience, Modifier.background(drawerBackground)), // Only apply solid background if NOT Plexperience
                     ) {
                         // Even though some must be clicked, focusing on it should clear other focused items
                         val interactionSource = remember { MutableInteractionSource() }
@@ -761,7 +769,7 @@ fun NavDrawer(
                 // Drawer content (The actual screen)
                 CompositionLocalProvider(
                     LocalBackdropHandler provides { url ->
-                        if (isNanifin) {
+                        if (isPlexperience) {
                             backdropImageUrl = url
                         }
                     }
