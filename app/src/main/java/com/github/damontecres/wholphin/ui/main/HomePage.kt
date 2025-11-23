@@ -182,8 +182,9 @@ fun HomePage(
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
-                contentStartPadding = 32.dp,
-                contentTopPadding = 32.dp,
+                contentStartPadding = 16.dp,
+                contentTopPadding = 24.dp,
+                addTopSpacer = true,
             )
             dialog?.let { params ->
                 DialogPopup(
@@ -223,7 +224,8 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
     contentStartPadding: androidx.compose.ui.unit.Dp = 16.dp,
-    contentTopPadding: androidx.compose.ui.unit.Dp = 12.dp,
+    contentTopPadding: androidx.compose.ui.unit.Dp = 24.dp,
+    addTopSpacer: Boolean = false,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -333,12 +335,15 @@ fun HomePageContent(
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
+            if (addTopSpacer) {
+                Spacer(Modifier.height(64.dp)) // Match the tab row height from recommended screen
+            }
             HomePageHeader(
                 item = focusedItem,
                 modifier =
                     Modifier
                         .fillMaxWidth(.6f)
-                        .fillMaxHeight(.33f)
+                        .fillMaxHeight(.42f)
                         .padding(start = contentStartPadding, top = contentTopPadding, end = 16.dp, bottom = 16.dp),
             )
             LazyColumn(
@@ -499,7 +504,6 @@ fun HomePageHeader(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            Spacer(Modifier.weight(1f))
             item?.let {
                 val dto = item.data
                 val isEpisode = item.type == BaseItemKind.EPISODE
@@ -537,6 +541,7 @@ fun HomePageHeader(
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
                 subtitle?.let {
@@ -546,25 +551,26 @@ fun HomePageHeader(
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
                 if (details.isNotEmpty()) {
                     DotSeparatedRow(
                         texts = details,
                         textStyle = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
                 val overviewModifier =
                     Modifier
-                        .padding(0.dp)
-                        .height(48.dp + if (!isEpisode) 12.dp else 0.dp)
+                        .fillMaxWidth(0.7f)
+                        .padding(start = 8.dp)
                 if (overview.isNotNullOrBlank()) {
                     Text(
                         text = overview,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = if (isEpisode) 2 else 3,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         modifier = overviewModifier,
                     )

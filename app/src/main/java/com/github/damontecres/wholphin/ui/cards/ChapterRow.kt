@@ -32,8 +32,9 @@ fun ChapterRow(
     ) {
         Text(
             text = stringResource(R.string.chapters),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 8.dp),
         )
         LazyRow(
             state = rememberLazyListState(),
