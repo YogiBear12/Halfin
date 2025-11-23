@@ -278,24 +278,24 @@ fun HomePageContent(
         onBackdropChange?.invoke(backdropImageUrl)
     }
     
-    val isNanifin = appThemeColors == AppThemeColors.NANIFIN
+    val isPlexperience = appThemeColors == AppThemeColors.PLEXPERIENCE
     var dynamicColorPrimary by remember { mutableStateOf(Color.Transparent) }
     var dynamicColorSecondary by remember { mutableStateOf(Color.Transparent) }
     
-    if (isNanifin) {
-        // Nanifin uses NavDrawer for background
+    if (isPlexperience) {
+        // Plexperience uses NavDrawer for background
         LaunchedEffect(backdropImageUrl) {
              onBackdropChange(backdropImageUrl)
         }
     } else {
-        // Non-Nanifin local extraction (if any) or other logic
+        // Non-Plexperience local extraction (if any) or other logic
     }
 
     Box(modifier = modifier) {
         val baseBackgroundColor = MaterialTheme.colorScheme.background
         
-        // Legacy / Non-Nanifin Background Logic
-        if (!isNanifin) {
+        // Legacy / Non-Plexperience Background Logic
+        if (!isPlexperience) {
             val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
             val gradientColor by animateColorAsState(targetPrimary, label = "gradient")
             

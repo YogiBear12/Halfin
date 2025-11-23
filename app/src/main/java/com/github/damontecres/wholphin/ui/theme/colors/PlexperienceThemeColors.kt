@@ -5,7 +5,7 @@ import androidx.tv.material3.darkColorScheme
 import androidx.tv.material3.lightColorScheme
 import com.github.damontecres.wholphin.ui.theme.ThemeColors
 
-val NanifinThemeColors =
+val PlexperienceThemeColors =
     object : ThemeColors {
         // Jellyfin Blue: #00A4DC
         // Background: #101010
@@ -47,7 +47,7 @@ val NanifinThemeColors =
         val surfaceContainerHighLight = Color(0xFFE8E7EF)
         val surfaceContainerHighestLight = Color(0xFFE3E2E9)
 
-        // Dark Theme (Nanifin Spec)
+        // Dark Theme (Plexperience Spec)
         val primaryDark = Color(0xFF00A4DC) // Jellyfin Blue
         val onPrimaryDark = Color(0xFF000000) // Black for contrast
         val primaryContainerDark = Color(0xFF004F70) // Darker blue
@@ -65,7 +65,7 @@ val NanifinThemeColors =
         val errorContainerDark = Color(0xFF93000A)
         val onErrorContainerDark = Color(0xFFFFDAD6)
         
-        val backgroundDark = Color(0xFF101010) // Nanifin Background
+        val backgroundDark = Color(0xFF101010) // Plexperience Background
         val onBackgroundDark = Color(0xFFE2E2E9)
         val surfaceDark = Color(0xFF101010) // Match background or slightly lighter
         val onSurfaceDark = Color(0xFFE2E2E9)

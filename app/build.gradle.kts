@@ -52,7 +52,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.damontecres.wholphin.nanifin"
+        applicationId = "com.github.yogi.halfin"
         minSdk = 25
         targetSdk = 36
         versionCode = getVersionCode()
