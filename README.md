@@ -1,4 +1,11 @@
-# Wholphin - an OSS Android TV client for Jellyfin
+# Halfin - A fork of Wholphin - an OSS Android TV client for Jellyfin
+
+> AI was used in the making of this fork.
+
+
+
+
+## The original Wholphin README is presented below.
 
 > "Never half-phin two jellies. Always wholphin one jelly."
 
@@ -18,9 +25,9 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 </a>
 </p>
 
-<img width="1280" height="771" alt="0 3 0_home" src="https://github.com/user-attachments/assets/23be4786-a4c3-45e5-a710-8d1ade2be2a3" />
+<img width="1280" height="771" alt="Home" src="assets/home.png" />
 
-## Features
+## Features of Wholphin
 
 - A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
 - Show Movie/TV Show titles when browsing libraries
@@ -36,11 +43,18 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
   - Default ExoPlayer/Media3
   - Experimental MPV
 
+## Features of This Fork
+- Dynamic backgrounds created by extracting color palettes from backdrops.
+- Transparent navigation drawer and headerm allowing backdrops and colors to reach the edges of the screen
+- Series thumbnails for Continue Watching and Next Up rows
+- Resized cards to reduce clutter
+- Consistent fonts and spacing across the app
+- Libass support in Exoplayer to support chipsets that can't use mpv
+
 ### Roadmap
 
-See [here for the roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap)
-
-## Installation
+See [here for the Wholphin roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap).
+Until these quality of life changes materialise in the main app, I plan to keep this fork in sync with new releases.
 
 Downloader Code: `8668671`
 
@@ -78,6 +92,7 @@ You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin
 
 ## Acknowledgements
 
+- Primarily, thanks to damontecres for creating Wholphin. This wouldn't be posible without you
 - Thanks to the Jellyfin team for creating and maintaining such a great open-source media server
 - Thanks to the official Jellyfin Android TV client developers, some code for creating the device direct play profile is adapted from there
 - Thanks to the Jellyfin Kotlin SDK developers for making it easier to interact with the Jellyfin server API
@@ -86,10 +101,10 @@ You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin
 ## Additional screenshots
 
 ### Movie library browsing
-<img width="1280" height="771" alt="0 3 0_movies" src="https://github.com/user-attachments/assets/a49829b5-bc2c-4af9-8d5d-2f7d0973ce01" />
+<img width="1280" height="771" alt="Movie library" src="assets/library.png" />
 
 ### Series page
-<img width="1280" height="771" alt="0 3 0_series_overview" src="https://github.com/user-attachments/assets/2d26f34e-3ee8-4599-ba59-32524637dab7" />
+<img width="1280" height="771" alt="Series overview" src="assets/series.png" />
 
-### Playlist
-<img width="1280" height="771" alt="0 3 0_playlist" src="https://github.com/user-attachments/assets/7ca589ab-9c88-483a-b769-35ffb5663d9e" />
+### Movie details
+<img width="1280" height="771" alt="Movie details" src="assets/movie.png" />
