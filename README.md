@@ -2,7 +2,7 @@
 
 > AI was used in the making of this fork.
 
-[Wholphin](https://github.com/damontecres/Wholphin) is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin. This fork aims to implement quality of life changes to enhance the UX and bring it more in line with the Plex experience.
+[Wholphin](https://github.com/damontecres/Wholphin) is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin. This fork aims to implement my own personal quality of life changes to enhance the UI and bring it more in line with the Plex app for Android TV.
 
 <img width="1280" alt="Home" src="assets/home.png" />
 
@@ -23,17 +23,16 @@
   - Experimental MPV
 
 ## Features of This Fork
-- Dynamic backgrounds created by extracting color palettes from backdrops.
-- Transparent navigation drawer and headerm allowing backdrops and colors to reach the edges of the screen
+- Dynamic backgrounds created by extracting color palettes from media backdrops
+- Transparent navigation drawer and header, allowing the backdrops and colors to reach the edges of the screen
 - Series thumbnails for Continue Watching and Next Up rows
-- Resized cards to reduce clutter
+- Resized cards to reduce (subjective) clutter
 - Consistent fonts and spacing across the app
-- Libass support in Exoplayer to support chipsets that can't use mpv
 
 ### Roadmap
 
 See [here for the Wholphin roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap).
-Until these quality of life changes materialize in the main app, I plan to keep this fork in sync with new releases.
+I plan to keep this fork in sync with new releases until I get bored, or it's no longer required for my own personal enjoyment.
 
 ## Compatibility
 
