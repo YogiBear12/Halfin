@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,12 +31,12 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
-import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 
@@ -67,7 +66,7 @@ fun MovieDetailsHeader(
             Text(
                 text = movie.name ?: "",
                 color = MaterialTheme.colorScheme.onBackground, // Match homepage: onBackground instead of onSurface
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.headlineSmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 8.dp), // Add 8dp left padding to align with summary text
@@ -86,17 +85,17 @@ fun MovieDetailsHeader(
                     )
                 }
                 val details =
-                    buildList {
-                        dto.productionYear?.let { add(it.toString()) }
-                        val duration = dto.runTimeTicks?.ticks
-                        duration
-                            ?.roundMinutes
-                            ?.toString()
-                            ?.let {
-                                add(it)
-                            }
-                        dto.officialRating?.let(::add)
-                        dto.timeRemaining?.roundMinutes?.let { add("$it left") }
+                    remember(dto) {
+                        buildList {
+                            dto.productionYear?.let { add(it.toString()) }
+                            val duration = dto.runTimeTicks?.ticks
+                            duration
+                                ?.roundMinutes
+                                ?.toString()
+                                ?.let(::add)
+                            dto.timeRemaining?.roundMinutes?.let { add("$it left") }
+                            dto.officialRating?.let(::add)
+                        }
                     }
                 if (details.isNotEmpty()) {
                     DotSeparatedRow(
@@ -106,6 +105,14 @@ fun MovieDetailsHeader(
                     )
                 }
             }
+
+            // Video stream details (from upstream)
+            VideoStreamDetails(
+                preferences = preferences,
+                dto = dto,
+                itemPlayback = chosenStreams?.itemPlayback,
+                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
+            )
 
             // Genres (comma separated)
             dto.genres?.letNotEmpty {

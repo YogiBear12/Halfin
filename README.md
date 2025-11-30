@@ -6,7 +6,25 @@
 
 <img width="1280" alt="Home" src="assets/home.png" />
 
+<<<<<<< HEAD
 ## Features of Wholphin
+=======
+<p align="center">
+<a href="https://github.com/damontecres/Wholphin/issues/303"><b>Help get Wholphin listed on the Play Store</b></a>
+<br/>
+<br/>
+<a href="https://github.com/damontecres/Wholphin/releases">
+<img alt="Current Release" src="https://img.shields.io/github/release/damontecres/wholphin.svg"/>
+</a>
+<a href="https://translate.codeberg.org/engage/wholphin/">
+<img src="https://translate.codeberg.org/widget/wholphin/wholphin/svg-badge.svg" alt="Translation status" />
+</a>
+</p>
+
+<img width="1280" height="771" alt="0 3 0_home" src="https://github.com/user-attachments/assets/23be4786-a4c3-45e5-a710-8d1ade2be2a3" />
+
+## Features
+>>>>>>> main
 
 - A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
 - Show Movie/TV Show titles when browsing libraries
