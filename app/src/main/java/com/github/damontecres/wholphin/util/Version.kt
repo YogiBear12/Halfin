@@ -83,8 +83,17 @@ data class Version(
         }
 
     companion object {
-        // Matches: v?X.Y.Z, v?X.Y.Z-P (Halfin patch format), or v?X.Y.Z-N-gHASH (git describe format)
-        private val VERSION_REGEX = Regex("v?(\\d+)\\.(\\d+)\\.(\\d+)(?:-(\\d+)(?:-g([a-zA-Z0-9]+))?)?")
+        // Matches: 
+        // - v?X.Y.Z (simple format)
+        // - v?X.Y.Z-P (Halfin patch format)
+        // - v?X.Y.Z-N-gHASH (git describe from simple tag)
+        // - v?X.Y.Z-P-N-gHASH (git describe from Halfin patch tag)
+        // The regex uses a more flexible pattern to handle all cases
+        // Pattern breakdown:
+        // - v?(\\d+)\\.(\\d+)\\.(\\d+) - base version X.Y.Z
+        // - (?:-(\\d+))? - optional patch number or commit count
+        // - (?:-(\\d+)-g([a-zA-Z0-9]+))? - optional commit count and hash (for git describe)
+        private val VERSION_REGEX = Regex("^v?(\\d+)\\.(\\d+)\\.(\\d+)(?:-(\\d+))?(?:-(\\d+)-g([a-zA-Z0-9]+))?$")
 
         /**
          * Parse a version string throwing if it is invalid
@@ -103,7 +112,8 @@ data class Version(
          * Supports formats:
          * - X.Y.Z (e.g., "0.3.2")
          * - X.Y.Z-P (e.g., "0.3.2-1" - Halfin patch format)
-         * - X.Y.Z-N-gHASH (e.g., "0.3.2-5-gabc123" - git describe format)
+         * - X.Y.Z-N-gHASH (e.g., "0.3.2-5-gabc123" - git describe from simple tag)
+         * - X.Y.Z-P-N-gHASH (e.g., "0.3.2-1-1-ga7a46bc" - git describe from Halfin patch tag)
          */
         fun tryFromString(version: String?): Version? {
             if (version == null) {
@@ -116,22 +126,35 @@ data class Version(
                 val major = m.groups[1]!!.value.toInt()
                 val minor = m.groups[2]!!.value.toInt()
                 val patch = m.groups[3]!!.value.toInt()
-                // group 4 is the optional number (patch number or commit count)
-                // group 5 is the optional hash (if present, it's git describe format)
-                val numOrPatch = m.groups[4]?.value?.toInt()
-                val hash = m.groups[5]?.value
+                // group 4 is the first optional number (could be patch number or commit count)
+                // group 5 is the second optional number (commit count, only if hash is present)
+                // group 6 is the optional hash (git describe format)
+                val firstNumber = m.groups[4]?.value?.toInt()
+                val secondNumber = m.groups[5]?.value?.toInt()
+                val hash = m.groups[6]?.value
                 
-                // If hash is present, it's git describe format (numCommits-hash)
-                // Otherwise, if numOrPatch is present, it's Halfin patch format
-                if (hash != null) {
-                    // Git describe format: X.Y.Z-N-gHASH
-                    Version(major, minor, patch, numOrPatch, hash)
-                } else if (numOrPatch != null) {
-                    // Halfin patch format: X.Y.Z-P (store patch in numCommits for comparison)
-                    Version(major, minor, patch, numOrPatch, null)
-                } else {
-                    // Simple format: X.Y.Z
-                    Version(major, minor, patch, null, null)
+                // Determine format based on what's present
+                when {
+                    hash != null -> {
+                        // Git describe format: X.Y.Z-P-N-gHASH or X.Y.Z-N-gHASH
+                        // If secondNumber is present, firstNumber is the patch number, secondNumber is commit count
+                        // If secondNumber is null, firstNumber is the commit count
+                        if (secondNumber != null) {
+                            // Format: X.Y.Z-P-N-gHASH (from Halfin patch tag)
+                            Version(major, minor, patch, secondNumber, hash)
+                        } else {
+                            // Format: X.Y.Z-N-gHASH (from simple tag)
+                            Version(major, minor, patch, firstNumber, hash)
+                        }
+                    }
+                    firstNumber != null -> {
+                        // Halfin patch format: X.Y.Z-P (store patch in numCommits for comparison)
+                        Version(major, minor, patch, firstNumber, null)
+                    }
+                    else -> {
+                        // Simple format: X.Y.Z
+                        Version(major, minor, patch, null, null)
+                    }
                 }
             }
         }
