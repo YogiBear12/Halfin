@@ -130,6 +130,7 @@ suspend fun upgradeApp(
     if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
         PreferencesViewModel.resetSubtitleSettings(appPreferences)
     }
+<<<<<<< HEAD
     if (previous.isEqualOrBefore(Version.fromString("0.3.2-4-g0"))) {
         appPreferences.updateData {
             it.updateSubtitlePreferences {
@@ -187,14 +188,11 @@ suspend fun upgradeApp(
             }
         }
     }
-
-    if (previous.isEqualOrBefore(Version.fromString("0.3.6-52-g0"))) {
-        if (Build.MODEL.equals("shield android tv", ignoreCase = true)) {
-            appPreferences.updateData {
-                it.updateMpvOptions {
-                    useGpuNext = false
-                }
-            }
+    // Migration for Halfin: Reset updateUrl to Halfin repo for all users upgrading to v0.3.3 or later
+    // This ensures users who had the Wholphin URL saved get migrated to the Halfin URL
+    if (previous.isEqualOrBefore(Version.fromString("0.3.2"))) {
+        appPreferences.updateData {
+            it.update { updateUrl = AppPreference.UpdateUrl.defaultValue }
         }
     }
 }
