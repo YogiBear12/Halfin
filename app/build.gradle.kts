@@ -82,11 +82,7 @@ android {
 
     defaultConfig {
         applicationId = "com.github.yogi.halfin"
-<<<<<<< HEAD
         minSdk = 23
-=======
-        minSdk = 25
->>>>>>> bd9f878 (more stuff)
         targetSdk = 36
         versionCode = getVersionCode()
         versionName = getAppVersion()
