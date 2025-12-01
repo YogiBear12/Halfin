@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -123,5 +124,12 @@ suspend fun upgradeApp(
     }
     if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.7-1-g0"))) {
         PreferencesViewModel.resetSubtitleSettings(appPreferences)
+    }
+    // Migration for Halfin: Reset updateUrl to Halfin repo for all users upgrading to v0.3.3 or later
+    // This ensures users who had the Wholphin URL saved get migrated to the Halfin URL
+    if (previous.isEqualOrBefore(Version.Companion.fromString("0.3.2"))) {
+        appPreferences.updateData {
+            it.update { updateUrl = AppPreference.UpdateUrl.defaultValue }
+        }
     }
 }

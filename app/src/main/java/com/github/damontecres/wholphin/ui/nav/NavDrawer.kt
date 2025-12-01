@@ -55,16 +55,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.alpha
-import androidx.palette.graphics.Palette
-import androidx.core.graphics.drawable.toBitmap
-import android.graphics.Bitmap
-import coil3.asDrawable
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import coil3.request.allowHardware
-import coil3.request.bitmapConfig
 import coil3.request.transitionFactory
 import coil3.transition.Transition
+import com.github.damontecres.wholphin.util.extractColorsFromBackdrop
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -327,100 +322,48 @@ fun NavDrawer(
     
     // Backdrop state lifted to NavDrawer
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
-    var dynamicColorPrimary by remember { mutableStateOf(Color.Transparent) }
-    var dynamicColorSecondary by remember { mutableStateOf(Color.Transparent) }
-    var dynamicColorTertiary by remember { mutableStateOf(Color.Transparent) }
+    // Initialize with generic colors to prevent fade to black/transparent on first load
+    // These will be replaced by extracted colors when available
+    val genericPrimary = Color(0xFF1E1F25) // surfaceContainerDark
+    val genericSecondary = Color(0xFF292A2F) // surfaceContainerHighDark
+    val genericTertiary = Color(0xFF38393F) // surfaceBrightDark
+    var dynamicColorPrimary by remember { mutableStateOf(genericPrimary.copy(alpha = 0.4f)) }
+    var dynamicColorSecondary by remember { mutableStateOf(genericSecondary.copy(alpha = 0.4f)) }
+    var dynamicColorTertiary by remember { mutableStateOf(genericTertiary.copy(alpha = 0.35f)) }
 
     if (isPlexperience) {
         LaunchedEffect(backdropImageUrl) {
+            // Capture the current backdrop URL to ensure we only update colors if it hasn't changed
+            // during extraction. This prevents colors from being updated with stale data during rapid navigation.
+            val currentBackdropUrl = backdropImageUrl
+            
             // Don't reset colors immediately - keep previous colors visible during loading
             // Only update colors after new backdrop is loaded and colors are extracted
-            if (backdropImageUrl != null) {
-                val loader = coil3.ImageLoader(context)
-                val request = ImageRequest.Builder(context)
-                    .data(backdropImageUrl)
-                    .allowHardware(false)
-                    .bitmapConfig(Bitmap.Config.ARGB_8888)
-                    .build()
-                val result = loader.execute(request)
-                if (result is coil3.request.SuccessResult) {
-                    val drawable = result.image.asDrawable(context.resources)
-                    val bitmap = drawable.toBitmap(config = Bitmap.Config.ARGB_8888)
-                    val palette = Palette.from(bitmap).generate()
-                    
-                    val vibrant = palette.vibrantSwatch
-                    val darkVibrant = palette.darkVibrantSwatch
-                    val lightVibrant = palette.lightVibrantSwatch
-                    val muted = palette.mutedSwatch
-                    val darkMuted = palette.darkMutedSwatch
-                    val lightMuted = palette.lightMutedSwatch
-                    val dominant = palette.dominantSwatch
-
-                    // Smart color selection: Choose colors based on color temperature and diversity
-                    // Helper function to determine if a color is "cool" (blue/purple/green) vs "warm" (red/orange/yellow)
-                    fun isCoolColor(rgb: Int): Boolean {
-                        val r = (rgb shr 16) and 0xFF
-                        val g = (rgb shr 8) and 0xFF
-                        val b = rgb and 0xFF
-                        // Cool colors have more blue/green than red
-                        return b > r && (b + g) > (r * 1.5f)
-                    }
-                    
-                    // Primary (Bottom-Right): darkVibrant -> darkMuted -> default
-                    val primaryColor = darkVibrant?.rgb 
-                        ?: darkMuted?.rgb 
-                        ?: android.graphics.Color.TRANSPARENT
-                    
-                    // Secondary (Top-Left): Smart selection based on color properties
-                    // If Vibrant is cool (blue/purple), use it. If Vibrant is warm (yellow/orange) and Muted is cool, use Muted.
-                    // This ensures we get cool tones (blue/purple) for top-left when available
-                    val secondaryColor = when {
-                        vibrant != null && isCoolColor(vibrant.rgb) -> vibrant.rgb // Vibrant is blue/purple - use it
-                        muted != null && isCoolColor(muted.rgb) -> muted.rgb // Muted is blue/purple - use it
-                        vibrant != null -> vibrant.rgb // Fallback to vibrant
-                        muted != null -> muted.rgb // Fallback to muted
-                        else -> android.graphics.Color.TRANSPARENT
-                    }
-                    
-                    // Tertiary (Top-Right under image): vibrant -> lightVibrant -> default
-                    val tertiaryColor = vibrant?.rgb 
-                        ?: lightVibrant?.rgb 
-                        ?: android.graphics.Color.TRANSPARENT
-                    
-                    // Apply alpha dimming (like Gemini) instead of RGB darkening for more natural look
-                    // Using lower alpha values to match Plex's subdued appearance
-                    // animateColorAsState will handle the smooth transition from previous colors
-                    dynamicColorPrimary = if (primaryColor != android.graphics.Color.TRANSPARENT) {
-                        Color(primaryColor).copy(alpha = 0.4f) // 40% opacity for bottom-right
-                    } else {
-                        Color.Transparent
-                    }
-                    dynamicColorSecondary = if (secondaryColor != android.graphics.Color.TRANSPARENT) {
-                        Color(secondaryColor).copy(alpha = 0.4f) // 40% opacity for top-left
-                    } else {
-                        Color.Transparent
-                    }
-                    dynamicColorTertiary = if (tertiaryColor != android.graphics.Color.TRANSPARENT) {
-                        Color(tertiaryColor).copy(alpha = 0.35f) // 35% opacity for top-right
-                    } else {
-                        Color.Transparent
-                    }
-                    
-                    timber.log.Timber.d("Color Extraction: Primary=%X (alpha=0.4), Secondary=%X (alpha=0.4), Tertiary=%X (alpha=0.35)", 
-                        primaryColor, secondaryColor, tertiaryColor)
-                    timber.log.Timber.d("Palette: Vibrant=%X, DarkVibrant=%X, LightVibrant=%X, Muted=%X, DarkMuted=%X, LightMuted=%X, Dominant=%X", 
-                        vibrant?.rgb, darkVibrant?.rgb, lightVibrant?.rgb, muted?.rgb, darkMuted?.rgb, lightMuted?.rgb, dominant?.rgb)
+            // This ensures smooth transitions without fading to black
+            if (currentBackdropUrl != null) {
+                // Use optimized color extraction utility with caching and performance optimizations
+                val extractedColors = extractColorsFromBackdrop(currentBackdropUrl, context)
+                // Only update colors if:
+                // 1. Extraction succeeded
+                // 2. The backdrop URL hasn't changed during extraction (still the current one)
+                // This keeps previous colors visible during extraction and prevents fade to black/transparent
+                // even during rapid navigation
+                if (extractedColors != null && backdropImageUrl == currentBackdropUrl) {
+                    dynamicColorPrimary = extractedColors.primary
+                    dynamicColorSecondary = extractedColors.secondary
+                    dynamicColorTertiary = extractedColors.tertiary
                 }
+                // If extraction fails, returns null, or backdrop changed during extraction,
+                // colors remain unchanged (previous colors stay visible)
             } else {
                 // Set generic dark/muted colors when backdrop is null (Library/Collections/Genres tabs)
                 // Using theme colors from PlexperienceThemeColors: surfaceContainerDark, surfaceContainerHighDark, surfaceBrightDark
-                val genericPrimary = Color(0xFF1E1F25) // surfaceContainerDark
-                val genericSecondary = Color(0xFF292A2F) // surfaceContainerHighDark
-                val genericTertiary = Color(0xFF38393F) // surfaceBrightDark
-                
-                dynamicColorPrimary = genericPrimary.copy(alpha = 0.4f)
-                dynamicColorSecondary = genericSecondary.copy(alpha = 0.4f)
-                dynamicColorTertiary = genericTertiary.copy(alpha = 0.35f)
+                // Only update if backdrop is still null (hasn't changed to a new URL)
+                if (backdropImageUrl == null) {
+                    dynamicColorPrimary = genericPrimary.copy(alpha = 0.4f)
+                    dynamicColorSecondary = genericSecondary.copy(alpha = 0.4f)
+                    dynamicColorTertiary = genericTertiary.copy(alpha = 0.35f)
+                }
             }
         }
     }
