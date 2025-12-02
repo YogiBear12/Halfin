@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,6 +61,7 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -71,8 +71,6 @@ import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.components.chooseStream as chooseStreamDialog
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
-import com.github.damontecres.wholphin.ui.getAudioDisplay
-import com.github.damontecres.wholphin.ui.getSubtitleDisplay
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -82,7 +80,6 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -408,9 +405,10 @@ fun MovieDetailsContent(
             }
             item {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                     modifier =
                         Modifier
+                            .fillMaxWidth()
                             .bringIntoViewRequester(bringIntoViewRequester)
                             .padding(bottom = 24.dp),
                 ) {
@@ -420,10 +418,10 @@ fun MovieDetailsContent(
                         chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
-                        Modifier
-                            .fillMaxWidth(.6f) // Match homepage width
-                            .fillMaxHeight(.42f) // Match homepage header height
-                            .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Reduced top padding to 8.dp
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(.6f) // Match homepage width
+                                .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Reduced top padding to 8.dp
                     )
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -451,42 +449,6 @@ fun MovieDetailsContent(
                             },
                             modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
                         )
-                        
-                        // Technical details middle-aligned with buttons row
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            chooseStream(movie.data, chosenStreams?.itemPlayback, MediaStreamType.VIDEO, preferences)
-                                ?.displayTitle
-                                ?.let {
-                                    TitleValueText(
-                                        stringResource(R.string.video),
-                                        it,
-                                        modifier = Modifier.widthIn(max = 160.dp),
-                                    )
-                                }
-                            val audioDisplay = getAudioDisplay(movie.data, chosenStreams, preferences)
-                            audioDisplay
-                                ?.let {
-                                    TitleValueText(
-                                        stringResource(R.string.audio),
-                                        it,
-                                        modifier = Modifier.widthIn(max = 200.dp),
-                                    )
-                                }
-
-                            getSubtitleDisplay(movie.data, chosenStreams)
-                                ?.let {
-                                    if (it.isNotNullOrBlank()) {
-                                        TitleValueText(
-                                            stringResource(R.string.subtitles),
-                                            it,
-                                            modifier = Modifier.widthIn(max = 160.dp),
-                                        )
-                                    }
-                                }
-                        }
                     }
                 }
             }

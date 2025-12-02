@@ -272,10 +272,26 @@ fun HomePageContent(
     }
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(focusedItem) {
-        backdropImageUrl = null
-        delay(150)
-        backdropImageUrl = focusedItem?.backdropImageUrl
-        onBackdropChange?.invoke(backdropImageUrl)
+        // Keep previous backdrop URL until new one is ready to prevent color reset during navigation
+        // Only set to null when navigating away from items (focusedItem becomes null and stays null)
+        val newBackdropUrl = focusedItem?.backdropImageUrl
+        
+        if (newBackdropUrl == null) {
+            // User navigated away - allow backdrop to fade out before resetting
+            // Small delay to allow smooth fade-out transition
+            delay(200)
+            // Only reset if still null (user hasn't navigated to another item)
+            if (focusedItem == null) {
+                backdropImageUrl = null
+                onBackdropChange?.invoke(null)
+            }
+        } else {
+            // User navigated to a new item - update backdrop URL
+            // Small delay to allow previous backdrop to start fading out smoothly
+            delay(100)
+            backdropImageUrl = newBackdropUrl
+            onBackdropChange?.invoke(newBackdropUrl)
+        }
     }
     
     val isPlexperience = appThemeColors == AppThemeColors.PLEXPERIENCE
@@ -557,6 +573,7 @@ fun HomePageHeader(
                 if (details.isNotEmpty()) {
                     DotSeparatedRow(
                         texts = details,
+                        rating = item.data.communityRating,
                         textStyle = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(start = 8.dp),
                     )

@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.nav
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
@@ -48,8 +49,9 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
-
-        is Destination.Playback ->
+        is Destination.PlaybackList,
+        is Destination.Playback,
+        ->
             PlaybackPage(
                 preferences = preferences,
                 deviceProfile = deviceProfile,
@@ -101,11 +103,12 @@ fun DestinationContent(
 
                 BaseItemKind.BOX_SET ->
                     CollectionFolderBoxSet(
-                        preferences,
-                        destination.itemId,
-                        destination.item,
-                        false,
-                        modifier,
+                        preferences = preferences,
+                        itemId = destination.itemId,
+                        item = destination.item,
+                        recursive = false,
+                        playEnabled = true,
+                        modifier = modifier,
                     )
 
                 BaseItemKind.PLAYLIST ->
@@ -164,6 +167,8 @@ fun DestinationContent(
                 filter = destination.filter,
                 recursive = destination.recursive,
                 usePosters = true,
+                playEnabled = true, // TODO only genres use this currently, so might need to change in future
+                filterOptions = DefaultForGenresFilterOptions,
                 modifier = modifier,
             )
 
@@ -261,6 +266,7 @@ fun CollectionFolder(
                 destination.itemId,
                 usePosters = usePostersOverride ?: false,
                 recursive = recursiveOverride ?: false,
+                playEnabled = true,
                 modifier = modifier,
             )
 
@@ -274,6 +280,7 @@ fun CollectionFolder(
                 destination.itemId,
                 usePosters = usePostersOverride ?: false,
                 recursive = recursiveOverride ?: false,
+                playEnabled = false,
                 modifier = modifier,
             )
     }

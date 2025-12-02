@@ -24,7 +24,7 @@ val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exi
 fun getVersionCode(): Int {
     val stdout = ByteArrayOutputStream()
     exec {
-        commandLine = listOf("git", "tag", "--list", "v*")
+        commandLine = listOf("git", "tag", "--list", "v*", "p*")
         standardOutput = stdout
     }
     return stdout
@@ -35,16 +35,39 @@ fun getVersionCode(): Int {
 }
 
 fun getAppVersion(): String {
-    val stdout = ByteArrayOutputStream()
-    exec {
-        commandLine = listOf("git", "describe", "--tags", "--long", "--match=v*")
-        standardOutput = stdout
+    // First try to get exact tag match (if we're on a tagged commit)
+    val exactTagStdout = ByteArrayOutputStream()
+    try {
+        exec {
+            commandLine = listOf("git", "describe", "--tags", "--exact-match", "--match=v*")
+            standardOutput = exactTagStdout
+            isIgnoreExitValue = true
+        }
+        val exactTag = exactTagStdout.toString().trim()
+        if (exactTag.isNotBlank()) {
+            return exactTag.removePrefix("v")
+        }
+    } catch (e: Exception) {
+        // If exact match fails, fall through to long format
     }
-    return stdout
-        .toString()
-        .trim()
-        .removePrefix("v")
-        .ifBlank { "0.0.0" }
+    
+    // Otherwise, use the long format with commit info
+    val stdout = ByteArrayOutputStream()
+    try {
+        exec {
+            commandLine = listOf("git", "describe", "--tags", "--long", "--match=v*")
+            standardOutput = stdout
+            isIgnoreExitValue = true
+        }
+        val version = stdout.toString().trim()
+        return if (version.isNotBlank()) {
+            version.removePrefix("v")
+        } else {
+            "0.0.0"
+        }
+    } catch (e: Exception) {
+        return "0.0.0"
+    }
 }
 
 android {
