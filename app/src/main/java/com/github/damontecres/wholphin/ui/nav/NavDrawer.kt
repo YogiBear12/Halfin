@@ -106,7 +106,9 @@ import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
@@ -331,34 +333,75 @@ fun NavDrawer(
     var dynamicColorSecondary by remember { mutableStateOf(genericSecondary.copy(alpha = 0.4f)) }
     var dynamicColorTertiary by remember { mutableStateOf(genericTertiary.copy(alpha = 0.35f)) }
 
+    // Debounce mechanism to detect when navigation has stopped
+    var stableBackdropUrl by remember { mutableStateOf<String?>(null) }
+    var debounceJob by remember { mutableStateOf<Job?>(null) }
+    
+    // Track backdrop loading state for coordinating color extraction
+    var backdropLoaded by remember { mutableStateOf(false) }
+    var backdropReadyForColors by remember { mutableStateOf(false) }
+    var currentBackdropKey by remember { mutableStateOf<String?>(null) }
+
     if (isPlexperience) {
+        // Debounce backdrop URL changes to detect when navigation has stopped
         LaunchedEffect(backdropImageUrl) {
-            // Capture the current backdrop URL to ensure we only update colors if it hasn't changed
-            // during extraction. This prevents colors from being updated with stale data during rapid navigation.
+            val currentUrl = backdropImageUrl
+            debounceJob?.cancel()
+            debounceJob = scope.launch {
+                delay(400) // Wait for navigation to stop (400ms debounce)
+                if (backdropImageUrl == currentUrl) {
+                    stableBackdropUrl = backdropImageUrl
+                }
+            }
+        }
+        
+        // Reset backdrop loading state when URL changes
+        LaunchedEffect(backdropImageUrl) {
+            if (backdropImageUrl != currentBackdropKey) {
+                backdropLoaded = false
+                backdropReadyForColors = false
+                currentBackdropKey = backdropImageUrl
+            }
+        }
+        
+        // Coordinate color extraction with backdrop loading
+        // Extract colors when stable URL is set. For cached colors, this returns immediately.
+        // For new extractions, the function will load the image and extract colors.
+        // Also depend on backdropImageUrl to ensure cached colors apply when navigating back
+        LaunchedEffect(stableBackdropUrl, backdropImageUrl) {
+            val currentStableUrl = stableBackdropUrl
             val currentBackdropUrl = backdropImageUrl
             
-            // Don't reset colors immediately - keep previous colors visible during loading
-            // Only update colors after new backdrop is loaded and colors are extracted
-            // This ensures smooth transitions without fading to black
-            if (currentBackdropUrl != null) {
-                // Use optimized color extraction utility with caching and performance optimizations
-                val extractedColors = extractColorsFromBackdrop(currentBackdropUrl, context)
-                // Only update colors if:
-                // 1. Extraction succeeded
-                // 2. The backdrop URL hasn't changed during extraction (still the current one)
-                // This keeps previous colors visible during extraction and prevents fade to black/transparent
-                // even during rapid navigation
-                if (extractedColors != null && backdropImageUrl == currentBackdropUrl) {
-                    dynamicColorPrimary = extractedColors.primary
-                    dynamicColorSecondary = extractedColors.secondary
-                    dynamicColorTertiary = extractedColors.tertiary
+            if (currentStableUrl != null && currentBackdropUrl == currentStableUrl) {
+                // No delay - extract colors immediately for cached items, or as soon as possible for new items
+                delay(0) // No delay
+                
+                // Double-check URL hasn't changed during delay
+                if (backdropImageUrl == currentStableUrl) {
+                    backdropReadyForColors = true
+                    
+                    // Extract colors for the stable backdrop URL
+                    // If colors are cached, this returns immediately
+                    // If not cached, it will load the image and extract colors
+                    val extractedColors = extractColorsFromBackdrop(currentStableUrl, context)
+                    
+                    // Only update colors if:
+                    // 1. Extraction succeeded
+                    // 2. The backdrop URL hasn't changed during extraction (still the current stable one)
+                    // This keeps previous colors visible during extraction and prevents fade to black/transparent
+                    if (extractedColors != null && backdropImageUrl == currentStableUrl) {
+                        dynamicColorPrimary = extractedColors.primary
+                        dynamicColorSecondary = extractedColors.secondary
+                        dynamicColorTertiary = extractedColors.tertiary
+                    }
+                    // If extraction fails or backdrop changed, colors remain unchanged (previous colors stay visible)
                 }
-                // If extraction fails, returns null, or backdrop changed during extraction,
-                // colors remain unchanged (previous colors stay visible)
-            } else {
-                // Set generic dark/muted colors when backdrop is null (Library/Collections/Genres tabs)
-                // Using theme colors from PlexperienceThemeColors: surfaceContainerDark, surfaceContainerHighDark, surfaceBrightDark
-                // Only update if backdrop is still null (hasn't changed to a new URL)
+            } else if (currentStableUrl == null && currentBackdropUrl == null) {
+                // User has navigated away - backdrop URL is null and stable
+                // Wait for backdrop fade-out before resetting colors
+                delay(800) // Wait for backdrop fade-out
+                
+                // Only reset if still null (user hasn't navigated to another item)
                 if (backdropImageUrl == null) {
                     dynamicColorPrimary = genericPrimary.copy(alpha = 0.4f)
                     dynamicColorSecondary = genericSecondary.copy(alpha = 0.4f)
@@ -395,20 +438,20 @@ fun NavDrawer(
             val targetTertiary = if (dynamicColorTertiary != Color.Transparent) dynamicColorTertiary else Color.Transparent
 
             // Smooth color transitions matching Plex's behavior - colors fade in from backdrop
-            // Using longer animation duration (1500ms) for a more elegant, spreading effect
+            // Using animation duration (1250ms) for smooth transitions
             val animPrimary by animateColorAsState(
                 targetPrimary,
-                animationSpec = tween(1500),
+                animationSpec = tween(1250),
                 label = "primary"
             )
             val animSecondary by animateColorAsState(
                 targetSecondary,
-                animationSpec = tween(1500),
+                animationSpec = tween(1250),
                 label = "secondary"
             )
             val animTertiary by animateColorAsState(
                 targetTertiary,
-                animationSpec = tween(1500),
+                animationSpec = tween(1250),
                 label = "tertiary"
             )
             
@@ -458,15 +501,6 @@ fun NavDrawer(
             // Simple fade-in using Coil's built-in transition
             // Track if image is loaded to prevent black border during transitions
             var imageLoaded by remember { mutableStateOf(false) }
-            var currentBackdropKey by remember { mutableStateOf<String?>(null) }
-            
-            // Reset loaded state when backdrop URL changes (even if it's the same URL)
-            LaunchedEffect(backdropImageUrl) {
-                if (backdropImageUrl != currentBackdropKey) {
-                    imageLoaded = false
-                    currentBackdropKey = backdropImageUrl
-                }
-            }
             
             // Only show backdrop if URL is not null - disappears when moving off item
             if (backdropImageUrl != null) {
@@ -487,12 +521,17 @@ fun NavDrawer(
                     contentScale = ContentScale.Crop,
                     alignment = Alignment.TopEnd,
                     onSuccess = { 
+                        // Set loaded state for color extraction coordination
                         // Only set loaded if this is still the current backdrop
                         if (backdropImageUrl == currentBackdropKey) {
                             imageLoaded = true
+                            backdropLoaded = true
                         }
                     },
-                    onError = { imageLoaded = false },
+                    onError = { 
+                        imageLoaded = false
+                        backdropLoaded = false
+                    },
                     modifier =
                     Modifier
                         .align(Alignment.TopEnd)
