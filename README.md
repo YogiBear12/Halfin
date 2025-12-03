@@ -2,30 +2,9 @@
 
 > AI was used in the making of this fork.
 
+[Wholphin](https://github.com/damontecres/Wholphin) is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin. This fork aims to implement my own personal quality of life changes to enhance the UI and bring it more in line with the Plex app for Android TV.
 
-
-
-## The original Wholphin README is presented below.
-
-> "Never half-phin two jellies. Always wholphin one jelly."
-
-Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin.
-
-This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
-
-<p align="center">
-<a href="https://github.com/damontecres/Wholphin/issues/303"><b>Help get Wholphin listed on the Play Store</b></a>
-<br/>
-<br/>
-<a href="https://github.com/damontecres/Wholphin/releases">
-<img alt="Current Release" src="https://img.shields.io/github/release/damontecres/wholphin.svg"/>
-</a>
-<a href="https://translate.codeberg.org/engage/wholphin/">
-<img src="https://translate.codeberg.org/widget/wholphin/wholphin/svg-badge.svg" alt="Translation status" />
-</a>
-</p>
-
-<img width="1280" height="771" alt="Home" src="assets/home.png" />
+<img width="1280" alt="Home" src="assets/home.png" />
 
 ## Features of Wholphin
 
@@ -44,51 +23,22 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
   - Experimental MPV
 
 ## Features of This Fork
-- Dynamic backgrounds created by extracting color palettes from backdrops.
-- Transparent navigation drawer and headerm allowing backdrops and colors to reach the edges of the screen
+- Dynamic backgrounds created by extracting color palettes from media backdrops
+- Transparent navigation drawer and header, allowing the backdrops and colors to reach the edges of the screen
 - Series thumbnails for Continue Watching and Next Up rows
-- Resized cards to reduce clutter
+- Resized cards to reduce (subjective) clutter
 - Consistent fonts and spacing across the app
-- Libass support in Exoplayer to support chipsets that can't use mpv
 
 ### Roadmap
 
 See [here for the Wholphin roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap).
-Until these quality of life changes materialise in the main app, I plan to keep this fork in sync with new releases.
-
-Downloader Code: `8668671`
-
-1. Enable side-loading "unknown" apps
-    - https://androidtvnews.com/unknown-sources-chromecast-google-tv/
-    - https://www.xda-developers.com/how-to-sideload-apps-android-tv/
-    - https://developer.android.com/distribute/marketing-tools/alternative-distribution#unknown-sources
-    - https://www.aftvnews.com/how-to-enable-apps-from-unknown-sources-on-an-amazon-fire-tv-or-fire-tv-stick/
-1. Install the APK on your Android TV device with one of these options:
-    - Install a browser program such as [Downloader](https://www.aftvnews.com/downloader/), use it to get the latest apk with short code `8668671` or URL: http://aftv.news/8668671
-    - Download the latest APK release from the [releases page](https://github.com/damontecres/Wholphin/releases/latest) or http://aftv.news/8668671
-        - Put the APK on an SD Card/USB stick/network share and use a file manager app from the Google Play Store / Amazon AppStore (e.g. `FX File Explorer`). Android's preinstalled file manager probably will not work!
-        - Use `Send files to TV` from the Google Play Store on your phone & TV
-        - (Expert) Use [ADB](https://developer.android.com/studio/command-line/adb) to install the APK from your computer ([guide](https://fossbytes.com/side-load-apps-android-tv/#h-how-to-sideload-apps-on-your-android-tv-using-adb))
-
-### Upgrading the app
-
-After the initial install above, the app will automatically check for updates. The updates can be installed in settings.
-
-The first time you attempt an update, the OS should guide you through enabling the required additional permissions for the app to install updates.
+I plan to keep this fork in sync with new releases until I get bored, or it's no longer required for my own personal enjoyment.
 
 ## Compatibility
 
 Requires Android 7.1+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` (tested on primarily `10.10.7`).
 
-The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
-
-## Contributions
-
-Issues and pull requests are always welcome! Please check before submitting that your issue or pull request is not a duplicate.
-
-If you plan to contribute, please read the [contributing guide](CONTRIBUTING.md)!
-
-You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin/)!
+Wholphin is tested on a variety of Android TV/Fire TV OS devices, so Halfin should work on those devices too, but if you encounter issues, please file an issue!
 
 ## Acknowledgements
 
@@ -101,10 +51,10 @@ You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin
 ## Additional screenshots
 
 ### Movie library browsing
-<img width="1280" height="771" alt="Movie library" src="assets/library.png" />
+<img width="1280" alt="Movie library" src="assets/library.png" />
 
 ### Series page
-<img width="1280" height="771" alt="Series overview" src="assets/series.png" />
+<img width="1280" alt="Series overview" src="assets/series.png" />
 
 ### Movie details
-<img width="1280" height="771" alt="Movie details" src="assets/movie.png" />
+<img width="1280" alt="Movie details" src="assets/movie.png" />

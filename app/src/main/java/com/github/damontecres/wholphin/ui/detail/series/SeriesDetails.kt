@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -22,18 +25,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -49,7 +57,6 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -60,6 +67,7 @@ import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -69,8 +77,10 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.detail.movie.TrailerRow
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -159,14 +169,6 @@ fun SeriesDetails(
                                 markPlayed = { played ->
                                     viewModel.setSeasonWatched(season.id, played)
                                 },
-                                onClickPlay = { shuffle ->
-                                    viewModel.navigateTo(
-                                        Destination.PlaybackList(
-                                            itemId = season.id,
-                                            shuffle = shuffle,
-                                        ),
-                                    )
-                                },
                             )
                     },
                     overviewOnClick = {
@@ -177,18 +179,7 @@ fun SeriesDetails(
                                 files = listOf(),
                             )
                     },
-                    playOnClick = { shuffle ->
-                        if (shuffle) {
-                            viewModel.navigateTo(
-                                Destination.PlaybackList(
-                                    itemId = item.id,
-                                    shuffle = true,
-                                ),
-                            )
-                        } else {
-                            viewModel.playNextUp()
-                        }
-                    },
+                    playOnClick = { viewModel.playNextUp() },
                     watchOnClick = { showWatchConfirmation = true },
                     favoriteOnClick = {
                         val favorite = item.data.userData?.isFavorite ?: false
@@ -289,7 +280,7 @@ fun SeriesDetailsContent(
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
-    playOnClick: (Boolean) -> Unit,
+    playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
@@ -300,9 +291,16 @@ fun SeriesDetailsContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val onBackdropChange = LocalBackdropHandler.current
 
     var position by rememberInt()
     val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    
+    // Set backdrop URL when series loads - this should NOT change when scrolling episodes
+    LaunchedEffect(series.backdropImageUrl) {
+        onBackdropChange(series.backdropImageUrl)
+    }
+    
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
@@ -311,36 +309,47 @@ fun SeriesDetailsContent(
     Box(
         modifier = modifier,
     ) {
-        DetailsBackdropImage(series.backdropImageUrl)
-
-        Column(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxSize(),
+        // Backdrop is now handled by NavDrawer via LocalBackdropHandler
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp), // Match MovieDetails
+            modifier = Modifier.fillMaxSize(),
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier,
-            ) {
-                item {
+            item {
+                Spacer(Modifier.height(64.dp)) // Match homepage top spacing
+            }
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier =
+                        Modifier
+                            .bringIntoViewRequester(bringIntoViewRequester)
+                            .padding(bottom = 24.dp),
+                ) {
                     SeriesDetailsHeader(
                         series = series,
+                        played = played,
+                        favorite = favorite,
                         overviewOnClick = overviewOnClick,
+                        playOnClick = {
+                            position = HEADER_ROW
+                            playOnClick.invoke()
+                        },
+                        watchOnClick = watchOnClick,
+                        favoriteOnClick = favoriteOnClick,
+                        bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
-                                .fillMaxWidth(.7f)
-                                .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(bottom = 8.dp),
+                                .fillMaxWidth(.6f) // Match MovieDetailsHeader
+                                .fillMaxHeight(.42f) // Match MovieDetailsHeader
+                                .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Match MovieDetailsHeader padding
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 16.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW])
-                                .padding(bottom = 80.dp),
+                                .padding(bottom = 24.dp),
                     ) {
                         ExpandablePlayButton(
                             title = R.string.play,
@@ -348,23 +357,7 @@ fun SeriesDetailsContent(
                             icon = Icons.Default.PlayArrow,
                             onClick = {
                                 position = HEADER_ROW
-                                playOnClick.invoke(false)
-                            },
-                            modifier =
-                                Modifier.onFocusChanged {
-                                    if (it.isFocused) {
-                                        scope.launch(ExceptionHandler()) {
-                                            bringIntoViewRequester.bringIntoView()
-                                        }
-                                    }
-                                },
-                        )
-                        ExpandableFaButton(
-                            title = R.string.shuffle,
-                            iconStringRes = R.string.fa_shuffle,
-                            onClick = {
-                                position = HEADER_ROW
-                                playOnClick.invoke(true)
+                                playOnClick.invoke()
                             },
                             modifier =
                                 Modifier.onFocusChanged {
@@ -404,8 +397,9 @@ fun SeriesDetailsContent(
                         )
                     }
                 }
-                item {
-                    ItemRow(
+            }
+            item {
+                ItemRow(
                         title = stringResource(R.string.tv_seasons),
                         items = seasons,
                         onClickItem = { index, item ->
@@ -432,9 +426,9 @@ fun SeriesDetailsContent(
                             )
                         },
                     )
-                }
-                if (people.isNotEmpty()) {
-                    item {
+            }
+            if (people.isNotEmpty()) {
+                item {
                         PersonRow(
                             people = people,
                             onClick = {
@@ -461,10 +455,10 @@ fun SeriesDetailsContent(
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[PEOPLE_ROW]),
                         )
-                    }
                 }
-                if (trailers.isNotEmpty()) {
-                    item {
+            }
+            if (trailers.isNotEmpty()) {
+                item {
                         TrailerRow(
                             trailers = trailers,
                             onClickTrailer = {
@@ -476,10 +470,10 @@ fun SeriesDetailsContent(
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[TRAILER_ROW]),
                         )
-                    }
                 }
-                if (extras.isNotEmpty()) {
-                    item {
+            }
+            if (extras.isNotEmpty()) {
+                item {
                         ExtrasRow(
                             extras = extras,
                             onClickItem = { index, item ->
@@ -492,10 +486,10 @@ fun SeriesDetailsContent(
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[EXTRAS_ROW]),
                         )
-                    }
                 }
-                if (similar.isNotEmpty()) {
-                    item {
+            }
+            if (similar.isNotEmpty()) {
+                item {
                         ItemRow(
                             title = stringResource(R.string.more_like_this),
                             items = similar,
@@ -538,7 +532,6 @@ fun SeriesDetailsContent(
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[SIMILAR_ROW]),
                         )
-                    }
                 }
             }
         }
@@ -558,50 +551,95 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    played: Boolean,
+    favorite: Boolean,
+    bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
+    playOnClick: () -> Unit,
+    watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val dto = series.data
-    val details =
-        buildList {
-            dto.productionYear?.let { add(it.toString()) }
-            dto.runTimeTicks
-                ?.ticks
-                ?.roundMinutes
-                ?.let { add(it.toString()) }
-            dto.officialRating?.let(::add)
-        }
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier,
+    
+    // Match MovieDetailsHeader structure: Box with fillMaxHeight(.42f), Column with fillMaxSize
+    Box(
+        modifier = modifier, // Modifier already has fillMaxHeight(.42f) applied from caller
     ) {
-        Text(
-            text = series.name ?: stringResource(R.string.unknown),
-            style = MaterialTheme.typography.displaySmall,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        DotSeparatedRow(
-            texts = details,
-            rating = dto.communityRating,
-            textStyle = MaterialTheme.typography.titleMedium,
-        )
-        dto.genres?.letNotEmpty {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            // Title
             Text(
-                text = it.joinToString(", "),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                text = series.name ?: stringResource(R.string.unknown),
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier,
+                modifier = Modifier.padding(start = 8.dp),
             )
-        }
-        dto.overview?.let { overview ->
-            OverviewText(
-                overview = overview,
-                maxLines = 3,
-                onClick = overviewOnClick,
-                textBoxHeight = Dp.Unspecified,
-            )
+
+            // Rating and year with dot separator (match MovieDetailsHeader)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 8.dp),
+            ) {
+                dto.communityRating?.let {
+                    SimpleStarRating(
+                        it,
+                        Modifier.height(20.dp),
+                    )
+                }
+                val details =
+                    buildList {
+                        dto.productionYear?.let { add(it.toString()) }
+                        val duration = dto.runTimeTicks?.ticks
+                        duration
+                            ?.roundMinutes
+                            ?.toString()
+                            ?.let {
+                                add(it)
+                            }
+                        dto.officialRating?.let(::add)
+                    }
+                if (details.isNotEmpty()) {
+                    DotSeparatedRow(
+                        texts = details,
+                        textStyle = MaterialTheme.typography.bodyLarge, // Match MovieDetailsHeader
+                        modifier = Modifier,
+                    )
+                }
+            }
+
+            // Genres (comma separated)
+            dto.genres?.letNotEmpty {
+                Text(
+                    text = it.joinToString(", "),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+
+            // Description (3 lines for series details)
+            dto.overview?.let { overview ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val focused = interactionSource.collectIsFocusedAsState().value
+                LaunchedEffect(focused) {
+                    if (focused) bringIntoViewRequester.bringIntoView()
+                }
+                OverviewText(
+                    overview = overview,
+                    maxLines = 3,
+                    onClick = overviewOnClick,
+                    textBoxHeight = Dp.Unspecified,
+                    interactionSource = interactionSource,
+                    modifier = Modifier.fillMaxWidth(0.7f).padding(0.dp),
+                )
+            }
         }
     }
 }
@@ -611,7 +649,6 @@ fun buildDialogForSeason(
     s: BaseItem,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
-    onClickPlay: (Boolean) -> Unit,
 ): DialogParams {
     val items =
         buildList {
@@ -633,23 +670,6 @@ fun buildDialogForSeason(
                     },
                 )
             }
-            add(
-                DialogItem(
-                    context.getString(R.string.play),
-                    Icons.Default.PlayArrow,
-                    iconColor = Color.Green.copy(alpha = .8f),
-                ) {
-                    onClickPlay.invoke(false)
-                },
-            )
-            add(
-                DialogItem(
-                    context.getString(R.string.shuffle),
-                    R.string.fa_shuffle,
-                ) {
-                    onClickPlay.invoke(true)
-                },
-            )
         }
     return DialogParams(
         title = s.name ?: context.getString(R.string.tv_season),

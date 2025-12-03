@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,7 +35,11 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -45,11 +50,11 @@ import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
+import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
@@ -75,6 +80,7 @@ fun SeriesOverviewContent(
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val onBackdropChange = LocalBackdropHandler.current
     var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
         logTab("series_overview", selectedTabIndex)
@@ -87,6 +93,11 @@ fun SeriesOverviewContent(
     var cardRowHasFocus by remember { mutableStateOf(false) }
     val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
+    // Set backdrop URL to series backdrop (NOT episode backdrop) - this should NOT change when scrolling episodes
+    LaunchedEffect(backdropImageUrl) {
+        onBackdropChange(backdropImageUrl)
+    }
+
     Box(
         modifier =
             modifier
@@ -95,7 +106,7 @@ fun SeriesOverviewContent(
                 .height(460.dp)
                 .bringIntoViewRequester(bringIntoViewRequester),
     ) {
-        DetailsBackdropImage(backdropImageUrl)
+        // Backdrop is now handled by NavDrawer via LocalBackdropHandler
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(16.dp),
@@ -131,7 +142,18 @@ fun SeriesOverviewContent(
                 )
             }
             item {
-                SeriesName(series.name, Modifier)
+                Spacer(Modifier.height(8.dp)) // Push content below tabs down
+            }
+            item {
+                series.name?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 8.dp, top = 24.dp),
+                    )
+                }
             }
             item {
                 // Episode header

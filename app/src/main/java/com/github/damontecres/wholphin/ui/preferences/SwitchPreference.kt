@@ -71,6 +71,7 @@ fun SwitchColors(): SwitchColors {
         AppThemeColors.UNRECOGNIZED,
         AppThemeColors.PURPLE,
         AppThemeColors.BLUE,
+        AppThemeColors.PLEXPERIENCE,
         ->
             SwitchDefaults.colors()
 
