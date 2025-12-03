@@ -56,9 +56,6 @@ app/libs/
 ffmpeg_decoder/
 app/release/
 app/debug/
-.vscode
-.kotlin
-docs/
 
 # mpv
 app/src/main/obj/
@@ -67,3 +64,8 @@ app/src/main/jnilibs
 app/src/main/jnilibs/
 scripts/mpv/deps/
 scripts/mpv/prefix/
+
+# Fork maintenance files (local only, not committed)
+FORK_MAINTENANCE.md
+scripts/sync-upstream.sh
+scripts/sync-upstream.bat
