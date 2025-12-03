@@ -206,10 +206,10 @@ fun MovieDetails(
                                     buildMoreDialogItems(
                                         context = context,
                                         item = movie,
+                                        seriesId = null,
+                                        sourceId = chosenStreams?.sourceId,
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
-                                        series = null,
-                                        sourceId = chosenStreams?.sourceId,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
