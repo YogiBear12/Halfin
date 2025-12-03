@@ -28,8 +28,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -64,10 +66,10 @@ import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
+import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -176,6 +178,7 @@ fun SeriesDetails(
                             ItemDetailsDialogInfo(
                                 title = item.name ?: context.getString(R.string.unknown),
                                 overview = item.data.overview,
+                                genres = item.data.genres.orEmpty(),  // Add genres parameter
                                 files = listOf(),
                             )
                     },
@@ -280,7 +283,7 @@ fun SeriesDetailsContent(
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
-    playOnClick: () -> Unit,
+    playOnClick: (Boolean) -> Unit,  // Boolean parameter for shuffle
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
@@ -331,9 +334,9 @@ fun SeriesDetailsContent(
                         played = played,
                         favorite = favorite,
                         overviewOnClick = overviewOnClick,
-                        playOnClick = {
+                        playOnClick = { shuffle ->
                             position = HEADER_ROW
-                            playOnClick.invoke()
+                            playOnClick.invoke(shuffle)
                         },
                         watchOnClick = watchOnClick,
                         favoriteOnClick = favoriteOnClick,
@@ -344,12 +347,16 @@ fun SeriesDetailsContent(
                                 .fillMaxHeight(.42f) // Match MovieDetailsHeader
                                 .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Match MovieDetailsHeader padding
                     )
+                    // Play button with focus handling from upstream
+                    val playFocusRequester = remember { FocusRequester() }
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
                                 .focusRequester(focusRequesters[HEADER_ROW])
-                                .padding(bottom = 24.dp),
+                                .focusRestorer(playFocusRequester)  // Restore focus when returning
+                                .focusGroup()  // Group related focusable items
+                                .padding(bottom = 16.dp),  // Match upstream spacing
                     ) {
                         ExpandablePlayButton(
                             title = R.string.play,
@@ -357,7 +364,26 @@ fun SeriesDetailsContent(
                             icon = Icons.Default.PlayArrow,
                             onClick = {
                                 position = HEADER_ROW
-                                playOnClick.invoke()
+                                playOnClick.invoke(false)  // false = normal play
+                            },
+                            modifier =
+                                Modifier
+                                    .focusRequester(playFocusRequester)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            scope.launch(ExceptionHandler()) {
+                                                bringIntoViewRequester.bringIntoView()
+                                            }
+                                        }
+                                    },
+                        )
+                        // Add shuffle button from upstream
+                        ExpandableFaButton(
+                            title = R.string.shuffle,
+                            iconStringRes = R.string.fa_shuffle,
+                            onClick = {
+                                position = HEADER_ROW
+                                playOnClick.invoke(true)  // true = shuffle
                             },
                             modifier =
                                 Modifier.onFocusChanged {
@@ -400,7 +426,7 @@ fun SeriesDetailsContent(
             }
             item {
                 ItemRow(
-                        title = stringResource(R.string.tv_seasons),
+                    title = stringResource(R.string.tv_seasons) + " (${seasons.size})",  // Add season count from upstream
                         items = seasons,
                         onClickItem = { index, item ->
                             position = SEASONS_ROW
@@ -555,7 +581,7 @@ fun SeriesDetailsHeader(
     favorite: Boolean,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
-    playOnClick: () -> Unit,
+    playOnClick: (Boolean) -> Unit,  // Changed to accept Boolean for shuffle
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -563,83 +589,69 @@ fun SeriesDetailsHeader(
     val scope = rememberCoroutineScope()
     val dto = series.data
     
-    // Match MovieDetailsHeader structure: Box with fillMaxHeight(.42f), Column with fillMaxSize
-    Box(
-        modifier = modifier, // Modifier already has fillMaxHeight(.42f) applied from caller
+    // Simplified layout: Column with fillMaxHeight(.42f) directly (removed Box wrapper)
+    // This maintains our 42% height constraint while simplifying the code
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxHeight(.42f),  // Apply height constraint directly
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            // Title
-            Text(
-                text = series.name ?: stringResource(R.string.unknown),
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+        // Title - keep our styling
+        Text(
+            text = series.name ?: stringResource(R.string.unknown),
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+
+        // Use DotSeparatedRow with rating and critic rating support (from upstream)
+        val details = remember(dto) {
+            buildList {
+                dto.productionYear?.let { add(it.toString()) }
+                val duration = dto.runTimeTicks?.ticks
+                duration
+                    ?.roundMinutes
+                    ?.toString()
+                    ?.let { add(it) }
+                dto.officialRating?.let(::add)
+            }
+        }
+        if (details.isNotEmpty() || dto.communityRating != null || dto.criticRating != null) {
+            DotSeparatedRow(
+                texts = details,
+                communityRating = dto.communityRating,
+                criticRating = dto.criticRating,  // Add critic rating support
+                textStyle = MaterialTheme.typography.bodyLarge,  // Keep our bodyLarge styling
                 modifier = Modifier.padding(start = 8.dp),
             )
+        }
 
-            // Rating and year with dot separator (match MovieDetailsHeader)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+        // Genres - use GenreText component with our styling
+        dto.genres?.letNotEmpty {
+            GenreText(
+                genres = it,
+                textStyle = MaterialTheme.typography.bodyLarge,  // Our styling: bodyLarge instead of bodyMedium
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 8.dp),
-            ) {
-                dto.communityRating?.let {
-                    SimpleStarRating(
-                        it,
-                        Modifier.height(20.dp),
-                    )
-                }
-                val details =
-                    buildList {
-                        dto.productionYear?.let { add(it.toString()) }
-                        val duration = dto.runTimeTicks?.ticks
-                        duration
-                            ?.roundMinutes
-                            ?.toString()
-                            ?.let {
-                                add(it)
-                            }
-                        dto.officialRating?.let(::add)
-                    }
-                if (details.isNotEmpty()) {
-                    DotSeparatedRow(
-                        texts = details,
-                        textStyle = MaterialTheme.typography.bodyLarge, // Match MovieDetailsHeader
-                        modifier = Modifier,
-                    )
-                }
-            }
+            )
+        }
 
-            // Genres (comma separated)
-            dto.genres?.letNotEmpty {
-                Text(
-                    text = it.joinToString(", "),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
+        // Description (3 lines for series details) - keep our styling
+        dto.overview?.let { overview ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val focused = interactionSource.collectIsFocusedAsState().value
+            LaunchedEffect(focused) {
+                if (focused) bringIntoViewRequester.bringIntoView()
             }
-
-            // Description (3 lines for series details)
-            dto.overview?.let { overview ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val focused = interactionSource.collectIsFocusedAsState().value
-                LaunchedEffect(focused) {
-                    if (focused) bringIntoViewRequester.bringIntoView()
-                }
-                OverviewText(
-                    overview = overview,
-                    maxLines = 3,
-                    onClick = overviewOnClick,
-                    textBoxHeight = Dp.Unspecified,
-                    interactionSource = interactionSource,
-                    modifier = Modifier.fillMaxWidth(0.7f).padding(0.dp),
-                )
-            }
+            OverviewText(
+                overview = overview,
+                maxLines = 3,
+                onClick = overviewOnClick,
+                textBoxHeight = Dp.Unspecified,
+                interactionSource = interactionSource,
+                modifier = Modifier.fillMaxWidth(0.7f).padding(0.dp),
+            )
         }
     }
 }

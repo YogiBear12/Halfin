@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.lifecycleScope
@@ -27,10 +28,13 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
+import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.ServerEventListener
@@ -41,8 +45,10 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
-import com.github.damontecres.wholphin.util.profile.createDeviceProfile
+import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -75,6 +81,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
 
+    @Inject
+    lateinit var deviceProfileService: DeviceProfileService
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,9 +93,39 @@ class MainActivity : AppCompatActivity() {
             appUpgradeHandler.copySubfont(false)
         }
         setContent {
-            CoilConfig(okHttpClient, false)
+            val density = LocalDensity.current
+            LaunchedEffect(density) {
+                with(density) {
+                    // Cards are never taller than 200 (most are around 120)
+                    BaseItem.primaryMaxHeight = 200.dp.roundToPx()
+                    // This width covers up to 2.35:1 aspect ratio images
+                    BaseItem.primaryMaxWidth = 480.dp.roundToPx()
+                }
+            }
+
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
+                CoilConfig(
+                    diskCacheSizeBytes =
+                        appPreferences.advancedPreferences.imageDiskCacheSizeBytes.let {
+                            // MEGA_BIT is private, use inline: 1024 * 1024L
+                            // Default: 100MB, Min: 50MB
+                            val megaBit = 1024 * 1024L
+                            val minBytes = 50 * megaBit
+                            val defaultBytes = 100 * megaBit
+                            if (it < minBytes) {
+                                defaultBytes
+                            } else {
+                                it
+                            }
+                        },
+                    okHttpClient = okHttpClient,
+                    debugLogging = false,
+                    enableCache = true,
+                )
+                LaunchedEffect(appPreferences.debugLogging) {
+                    DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
+                }
                 WholphinTheme(
                     true,
                     appThemeColors = appPreferences.interfacePreferences.appThemeColors,
@@ -147,20 +186,19 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                 }
-                                val deviceProfile =
-                                    remember(current, preferences) {
-                                        createDeviceProfile(
-                                            this@MainActivity,
-                                            preferences,
+                                LaunchedEffect(current, preferences) {
+                                    withContext(Dispatchers.IO) {
+                                        deviceProfileService.getOrCreateDeviceProfile(
+                                            preferences.appPreferences.playbackPreferences,
                                             current?.server?.serverVersion,
                                         )
                                     }
+                                }
                                 ApplicationContent(
                                     user = current?.user,
                                     server = current?.server,
                                     navigationManager = navigationManager,
                                     preferences = preferences,
-                                    deviceProfile = deviceProfile,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
