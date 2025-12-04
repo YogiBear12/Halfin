@@ -164,7 +164,7 @@ android {
                 .forEach { output ->
                     val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
                     val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
+                        "Halfin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
                     output.outputFileName = outputFileName
                 }
         }
