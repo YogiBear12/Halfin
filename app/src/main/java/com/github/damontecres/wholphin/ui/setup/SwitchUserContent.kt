@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -86,32 +89,38 @@ fun SwitchUserContent(
     }
 
     currentServer?.let { server ->
+        // Create API client for fetching user images (no auth needed for public user images)
+        val apiClient = remember(server.url) {
+            viewModel.jellyfin.createApi(server.url)
+        }
+        
         Box(
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .fillMaxWidth(.5f)
-                        .align(Alignment.Center)
-                        .padding(16.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ),
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
             ) {
+                // Title
                 Text(
                     text = stringResource(R.string.select_user),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
+                // Server name subtitle - use wrapContentHeight to prevent cutoff
                 Text(
                     text = server.name ?: server.url,
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .padding(bottom = 32.dp)
+                        .wrapContentHeight(), // Ensure text has enough vertical space
                 )
+                // User list with icons
                 UserList(
                     users = users,
                     currentUser = currentUser,
@@ -125,13 +134,8 @@ fun SwitchUserContent(
                     onSwitchServer = {
                         viewModel.navigationManager.navigateTo(Destination.ServerList)
                     },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                                shape = RoundedCornerShape(16.dp),
-                            ),
+                    apiClient = apiClient,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -187,6 +191,8 @@ fun SwitchUserContent(
                                 text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                             Text(
                                 text = quickConnect?.code ?: "Failed to get code",
@@ -218,6 +224,8 @@ fun SwitchUserContent(
                             text = "Enter username/password to login to ${server.name ?: server.url}",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         UserStateError(userState)
                         Row(
