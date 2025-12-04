@@ -53,7 +53,7 @@ class UpdateChecker
     ) {
         companion object {
             // TODO apk names
-            private const val ASSET_NAME = "Wholphin"
+            private const val ASSET_NAME = "Halfin"
             private const val APK_NAME = "$ASSET_NAME.apk"
 
             private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
@@ -171,19 +171,25 @@ class UpdateChecker
             preferRelease: Boolean,
         ): String? {
             val abiSuffix = Build.SUPPORTED_ABIS.firstOrNull().let { if (it != null) "-$it" else "" }
+            // New naming pattern: Halfin-VERSION-ABI.apk (e.g., Halfin-0.3.4-2-arm64-v8a.apk)
+            // Also support old pattern for backwards compatibility
             val releaseSuffix = if (preferRelease) "-release" else "-debug"
-            val preferredNames =
+            val preferredPatterns =
                 listOf(
-                    "$ASSET_NAME${releaseSuffix}$abiSuffix.apk",
-                    "$ASSET_NAME$releaseSuffix.apk",
-                    "$ASSET_NAME.apk",
+                    // New pattern: Halfin-VERSION-ABI.apk (matches GitHub release naming)
+                    Regex("^$ASSET_NAME-.*$abiSuffix\\.apk$"),
+                    Regex("^$ASSET_NAME-.*\\.apk$"),
+                    // Old pattern: Halfin-release-ABI.apk (for backwards compatibility)
+                    Regex("^$ASSET_NAME${releaseSuffix}$abiSuffix\\.apk$"),
+                    Regex("^$ASSET_NAME$releaseSuffix\\.apk$"),
+                    Regex("^$ASSET_NAME\\.apk$"),
                 )
             var preferredAsset: JsonObject? = null
-            outer@ for (name in preferredNames) {
+            outer@ for (pattern in preferredPatterns) {
                 for (asset in assets) {
                     val assetName =
                         asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                    if (name == assetName) {
+                    if (assetName != null && pattern.matches(assetName)) {
                         preferredAsset = asset.jsonObject
                         break@outer
                     }
