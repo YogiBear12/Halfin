@@ -58,6 +58,8 @@ import java.util.UUID
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.AspectRatios
 
 /**
  * Display a list of users plus option to add a new one or switch servers
@@ -100,37 +102,22 @@ fun UserList(
                         apiClient = apiClient,
                     )
                 }
+                // Add User card - always rightmost
+                item {
+                    AddUserCard(
+                        onClick = { onAddUser.invoke() },
+                    )
+                }
             }
         }
 
-        // Buttons below user list - centered and same width
+        // Switch servers button below user list - centered
         Row(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
         ) {
-            Button(
-                onClick = { onAddUser.invoke() },
-                modifier = Modifier.width(200.dp), // Fixed width to match switch servers button
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 8.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.add_user),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
             Button(
                 onClick = { onSwitchServer.invoke() },
                 modifier = Modifier.width(200.dp), // Fixed width for consistency
@@ -242,23 +229,24 @@ private fun UserIconCard(
     // Track image loading errors
     var imageError by remember { mutableStateOf(false) }
     
-    // Round card - circular shape, with proper focus growth
+    // Card dimensions - square card
+    val cardSize = Cards.height2x3 * 0.75f // ~120dp (same size as before)
+    
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Square card
+        // Square card with colored background
         Card(
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
-            modifier = Modifier.size(140.dp),
+            modifier = Modifier.size(cardSize),
             colors = CardDefaults.colors(
                 containerColor = Color.Transparent, // Transparent so only content is visible
             ),
         ) {
-            // Square content inside Card
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -275,27 +263,38 @@ private fun UserIconCard(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                if (userImageUrl != null && !imageError) {
-                    AsyncImage(
-                        model = userImageUrl,
-                        contentDescription = user.name,
-                        contentScale = ContentScale.Crop,
-                        onError = { imageError = true },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    // Show Person silhouette icon
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = user.name,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                // Circular profile image/icon - 70% of the square
+                Box(
+                    modifier = Modifier
+                        .size(cardSize * 0.7f) // 70% of card size for the circle
+                        .clip(CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (userImageUrl != null && !imageError) {
+                        AsyncImage(
+                            model = userImageUrl,
+                            contentDescription = user.name,
+                            contentScale = ContentScale.Crop,
+                            onError = { imageError = true },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        // Show Person silhouette icon - 90% of circle size
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = user.name,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            modifier = Modifier.size(cardSize * 0.63f), // 90% of circle (0.7 * 0.9)
+                        )
+                    }
                 }
             }
         }
         
-        // Username below the round selector - bolded/thicker
+        // Username below the card
         Text(
             text = user.name ?: user.id.toString(),
             style = MaterialTheme.typography.bodyLarge.copy(
@@ -306,8 +305,88 @@ private fun UserIconCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
-                .width(140.dp) // Match card width
-                .padding(vertical = 4.dp),
+                .width(cardSize)
+                .padding(horizontal = 4.dp),
+        )
+    }
+}
+
+/**
+ * Add User card component - displays a + icon in a circle
+ */
+@Composable
+private fun AddUserCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    
+    // Use a neutral gray color for the add user card
+    val addUserColor = MaterialTheme.colorScheme.surfaceVariant
+    
+    // Card dimensions - square card (same as user cards)
+    val cardSize = Cards.height2x3 * 0.75f // ~120dp
+    
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Square card with colored background
+        Card(
+            onClick = onClick,
+            interactionSource = interactionSource,
+            modifier = Modifier.size(cardSize),
+            colors = CardDefaults.colors(
+                containerColor = Color.Transparent, // Transparent so only content is visible
+            ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        if (focused) {
+                            addUserColor.copy(alpha = 0.6f)
+                        } else {
+                            addUserColor.copy(alpha = 0.4f)
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                // Circular + icon - 70% of the square
+                Box(
+                    modifier = Modifier
+                        .size(cardSize * 0.7f) // 70% of card size for the circle
+                        .clip(CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_user),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.size(cardSize * 0.4f), // Size of the + icon
+                    )
+                }
+            }
+        }
+        
+        // "Add User" text below the card
+        Text(
+            text = stringResource(R.string.add_user),
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .width(cardSize)
+                .padding(horizontal = 4.dp),
         )
     }
 }
