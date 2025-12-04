@@ -18,6 +18,7 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,7 +39,8 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 @Composable
 fun DotSeparatedRow(
     texts: List<String>,
-    rating: Float? = null,
+    communityRating: Float? = null,
+    criticRating: Float? = null,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
@@ -53,35 +55,64 @@ fun DotSeparatedRow(
                     style = textStyle,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                if (rating != null || index != texts.lastIndex) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 1f))
-                                .size(4.dp),
-                    )
+                if (communityRating != null || criticRating != null || index != texts.lastIndex) {
+                    Dot()
                 }
             }
-            rating?.let {
+            communityRating?.let {
                 SimpleStarRating(
                     communityRating = it,
                     modifier = Modifier,
                 )
+                if (criticRating != null) {
+                    Dot()
+                }
+            }
+            criticRating?.let {
+                TomatoRating(it)
             }
         }
     }
+}
+
+@Composable
+fun Dot(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(horizontal = 8.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 1f))
+                .size(4.dp),
+    )
 }
 
 @PreviewTvSpec
 @Composable
 private fun DotSeparatedRowPreview() {
     WholphinTheme {
-        DotSeparatedRow(
-            texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left"),
-            rating = 7.5f,
-            modifier = Modifier,
-        )
+        Column {
+            DotSeparatedRow(
+                texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left"),
+                communityRating = null,
+                criticRating = .75f,
+                modifier = Modifier,
+                textStyle = MaterialTheme.typography.titleMedium,
+            )
+            DotSeparatedRow(
+                texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left"),
+                communityRating = 7.5f,
+                criticRating = .75f,
+                modifier = Modifier,
+                textStyle = MaterialTheme.typography.titleMedium,
+            )
+            DotSeparatedRow(
+                texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left 7.5"),
+                communityRating = 7.5f,
+                criticRating = .45f,
+                modifier = Modifier,
+                textStyle = MaterialTheme.typography.titleLarge,
+            )
+        }
     }
 }

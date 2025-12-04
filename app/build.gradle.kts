@@ -76,7 +76,7 @@ android {
 
     defaultConfig {
         applicationId = "com.github.yogi.halfin"
-        minSdk = 25
+        minSdk = 23  // Accept upstream change: Support Android TV 6 & 7.0
         targetSdk = 36
         versionCode = getVersionCode()
         versionName = getAppVersion()

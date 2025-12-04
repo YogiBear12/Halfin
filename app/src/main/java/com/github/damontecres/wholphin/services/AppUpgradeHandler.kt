@@ -9,9 +9,12 @@ import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.update
+import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
+import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
@@ -125,6 +128,15 @@ suspend fun upgradeApp(
     if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.7-1-g0"))) {
         PreferencesViewModel.resetSubtitleSettings(appPreferences)
     }
+    if (previous.isEqualOrBefore(Version.Companion.fromString("0.3.2-4-g0"))) {
+        appPreferences.updateData {
+            it.updateSubtitlePreferences {
+                margin = SubtitleSettings.Margin.defaultValue.toInt()
+            }
+        }
+    }
+    // Note: ImageDiskCacheSize migration removed - preference may not exist in our version
+    // If needed, this can be added when the preference is available
     // Migration for Halfin: Reset updateUrl to Halfin repo for all users upgrading to v0.3.3 or later
     // This ensures users who had the Wholphin URL saved get migrated to the Halfin URL
     if (previous.isEqualOrBefore(Version.Companion.fromString("0.3.2"))) {

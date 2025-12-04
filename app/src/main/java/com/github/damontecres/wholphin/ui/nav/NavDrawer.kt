@@ -27,7 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft  // Use automirrored for RTL support
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -112,7 +112,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
-import org.jellyfin.sdk.model.api.DeviceProfile
 import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
@@ -231,7 +230,6 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
-    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
         hiltViewModel(
@@ -760,7 +758,6 @@ fun NavDrawer(
                     DestinationContent(
                         destination = destination,
                         preferences = preferences,
-                        deviceProfile = deviceProfile,
                         modifier =
                         Modifier
                             .fillMaxSize(),

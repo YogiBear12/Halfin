@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
@@ -80,7 +81,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
@@ -93,7 +93,6 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun PlaybackPage(
     preferences: UserPreferences,
-    deviceProfile: DeviceProfile,
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
@@ -104,7 +103,7 @@ fun PlaybackPage(
         }
     }
     LaunchedEffect(destination) {
-        viewModel.init(destination, deviceProfile, preferences)
+        viewModel.init(destination, preferences)
     }
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
@@ -117,6 +116,7 @@ fun PlaybackPage(
         LoadingState.Success -> {
             val prefs = preferences.appPreferences.playbackPreferences
             val scope = rememberCoroutineScope()
+            val configuration = LocalConfiguration.current
             val density = LocalDensity.current
 
             val player = viewModel.player
@@ -142,11 +142,11 @@ fun PlaybackPage(
             val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
             var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
-
             OneTimeLaunchedEffect {
                 if (prefs.playerBackend == PlayerBackend.MPV) {
                     scope.launch(Dispatchers.Main + ExceptionHandler()) {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                            configuration,
                             density,
                         )
                     }
@@ -322,6 +322,7 @@ fun PlaybackPage(
                                     preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
                                         setStyle(it.toSubtitleStyle())
                                         setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
                                     }
                                 }
                             },

@@ -20,6 +20,8 @@ class AppPreferencesSerializer
                 .apply {
                     updateUrl = AppPreference.UpdateUrl.defaultValue
                     autoCheckForUpdates = AppPreference.AutoCheckForUpdates.defaultValue
+                    sendCrashReports = AppPreference.SendCrashReports.defaultValue
+                    debugLogging = false // Default: debug logging disabled
 
                     playbackPreferences =
                         PlaybackPreferences
@@ -93,6 +95,15 @@ class AppPreferencesSerializer
                                             resetSubtitles()
                                         }.build()
                             }.build()
+
+                    advancedPreferences =
+                        AdvancedPreferences
+                            .newBuilder()
+                            .apply {
+                                // MEGA_BIT is private, use inline: 1024 * 1024L
+                                // Default: 100MB
+                                imageDiskCacheSizeBytes = 100 * 1024 * 1024L
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -141,6 +152,11 @@ inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.B
         subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
     }
 
+inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
+    }
+
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
     fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
@@ -152,4 +168,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundColor = SubtitleSettings.BackgroundColor.defaultValue.toArgb()
     backgroundOpacity = SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
+    margin = SubtitleSettings.Margin.defaultValue.toInt()
 }

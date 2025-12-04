@@ -195,7 +195,7 @@ fun SeriesOverview(
                                 item = ep,
                                 watched = ep.data.userData?.played ?: false,
                                 favorite = ep.data.userData?.isFavorite ?: false,
-                                series = series,
+                                seriesId = series.id,
                                 sourceId = chosenStreams?.sourceId,
                                 actions =
                                     MoreDialogActions(
@@ -332,6 +332,7 @@ fun SeriesOverview(
                                 ItemDetailsDialogInfo(
                                     title = it.name ?: context.getString(R.string.unknown),
                                     overview = it.data.overview,
+                                    genres = it.data.genres.orEmpty(),
                                     files = it.data.mediaSources.orEmpty(),
                                 )
                         }
