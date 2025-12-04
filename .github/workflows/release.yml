@@ -49,10 +49,15 @@ jobs:
         run: |
           find app/build/outputs/apk -name '*.apk' -print0 |
             while IFS= read -r -d '' line; do
-              # Halfin-release-0.3.4-2-62-g5c12e03-16-arm64-v8a.apk => Halfin-arm64-v8a.apk
-              short_name="$(echo $line | sed -E 's/-release-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
+              # Halfin-release-0.3.4-2-2-arm64-v8a.apk => Halfin-0.3.4-2-arm64-v8a.apk (exact tag)
+              # Halfin-release-0.3.4-2-62-g5c12e03-16-arm64-v8a.apk => Halfin-0.3.4-2-arm64-v8a.apk (with hash)
+              # Remove: -release and -VERSIONCODE(-gHASH-VERSIONCODE)? but keep version and ABI
+              # Pattern: -release-[version]-[versionCode](-g[hash]-[versionCode])?(-[abi])?.apk
+              short_name="$(echo $line | sed -E 's|(.*/)?Halfin-release-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[0-9]+(-g[a-fA-F0-9]+-[0-9]+)?(-[a-z0-9-]+)?\.apk$|\1Halfin-$2$4.apk|')"
               echo "$line => $short_name"
-              cp "$line" "$short_name"
+              if [ "$short_name" != "$line" ] && [ -n "$short_name" ]; then
+                cp "$line" "$short_name"
+              fi
             done
           apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
           echo "apks=$apks" >> "$GITHUB_OUTPUT"
