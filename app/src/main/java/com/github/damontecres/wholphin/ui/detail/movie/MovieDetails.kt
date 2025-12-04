@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -590,16 +591,22 @@ fun TrailerRow(
                         Modifier
                     }
                 when (item) {
-                    is LocalTrailer ->
-                        SeasonCard(
-                            item = item.baseItem,
+                    is LocalTrailer -> {
+                        val baseItem = item.baseItem
+                        BannerCard(
+                            name = baseItem.name,
+                            imageUrl = baseItem.imageUrl,
+                            fallbackImageUrl = baseItem.backdropImageUrl,
                             onClick = { onClickTrailer.invoke(item) },
                             onLongClick = {},
-                            imageHeight = Cards.height2x3,
-                            imageWidth = Dp.Unspecified,
-                            showImageOverlay = false,
+                            played = baseItem.data.userData?.played ?: false,
+                            favorite = baseItem.data.userData?.isFavorite ?: false,
+                            playPercent = baseItem.data.userData?.playedPercentage ?: 0.0,
+                            cardHeight = 100.dp, // Episode style card height
+                            aspectRatio = AspectRatios.WIDE, // Episode style aspect ratio (16:9)
                             modifier = cardModifier,
                         )
+                    }
 
                     is RemoteTrailer -> {
                         val subtitle =
@@ -607,21 +614,18 @@ fun TrailerRow(
                                 "youtube.com", "www.youtube.com" -> "YouTube"
                                 else -> null
                             }
-                        SeasonCard(
-                            title = item.name,
-                            subtitle = subtitle,
+                        BannerCard(
                             name = item.name,
                             imageUrl = null,
-                            isFavorite = false,
-                            isPlayed = false,
-                            unplayedItemCount = 0,
-                            playedPercentage = 0.0,
                             onClick = { onClickTrailer.invoke(item) },
                             onLongClick = {},
+                            cornerText = subtitle,
+                            played = false,
+                            favorite = false,
+                            playPercent = 0.0,
+                            cardHeight = 100.dp, // Episode style card height
+                            aspectRatio = AspectRatios.WIDE, // Episode style aspect ratio (16:9)
                             modifier = cardModifier,
-                            showImageOverlay = false,
-                            imageHeight = Cards.height2x3,
-                            imageWidth = Dp.Unspecified,
                         )
                     }
                 }
