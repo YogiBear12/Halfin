@@ -1,0 +1,64 @@
+[33m7e3a0b6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mhalfin-customizations[m[33m, [m[1;33mtag: [m[1;33mv0.3.4-1[m[33m)[m Merge upstream changes
+[33m1371a32[m fix for compile error
+[33m55ddc6f[m Additional color UI refinements
+[33mbddf51e[m[33m ([m[1;32mmain[m[33m)[m Fix some threading issues (#364)
+[33m56bf3cb[m Optimizes recommended content & image caching (#359)
+[33m91115f7[m[33m ([m[1;33mtag: [m[1;33mv0.3.3-1[m[33m)[m Update app icons
+[33mddb7243[m Update color extraction to be more performant and prevent saturating the main thread
+[33md4344ea[m Improve version parsing to handle X.Y.Z-P-N-gHASH format from git describe
+[33m4656503[m Fix Version parsing to support Halfin version format (X.Y.Z-P)
+[33m51f34e0[m Update README
+[33md32eb0a[m more stuff
+[33m5a38cc6[m Further UX changes
+[33mc87b3c1[m Adjust card sizes: reduce poster cards to 160dp and episode cards to 100dp
+[33m5d4c700[m lotsa stuff
+[33m10233eb[m Support VC-1 direct play if device supports it (#362)
+[33m8b33dd6[m Updates series details, adds movie genres, & adds critic rating (#358)
+[33mfc330a3[m Improve search keyboard dismissal (#317)
+[33md0bfdac[m Fix version name from #350
+[33m258c50a[m Add support for Android TV 6 & 7.0 (#350)
+[33meca3268[m Add setting to increase logging verbosity (#354)
+[33ma320875[m[33m ([m[1;33mtag: [m[1;33mv0.3.3[m[33m)[m Release v0.3.3
+[33mef20dad[m[33m ([m[1;33mtag: [m[1;33mdevelop[m[33m)[m Fix settings changes needing a restart to apply
+[33m8a24813[m Fix live tv being unplayable (#346)
+[33mf4c602e[m Fix broken scroll on home page (#345)
+[33mff91fa8[m Few minor UI fixes (#343)
+[33m13a3c6c[m Merge pull request #339 from damontecres/translations-2025-11-28
+[33m117d672[m Translated using Weblate (Italian)
+[33mdcfe008[m Translated using Weblate (Dutch)
+[33mffa423f[m Translated using Weblate (Swedish)
+[33m90db582[m Translated using Weblate (Spanish)
+[33m5ad66a1[m Translated using Weblate (Spanish)
+[33mf1bcc57[m Translated using Weblate (Spanish)
+[33m0bef904[m Added translation using Weblate (Dutch)
+[33mdd198de[m Translated using Weblate (Italian)
+[33m0e4f214[m Translated using Weblate (Italian)
+[33me59cc30[m Translated using Weblate (Chinese (Traditional Han script))
+[33maa67a15[m Translated using Weblate (French)
+[33m0b104a4[m Translated using Weblate (German)
+[33mc976df2[m Translated using Weblate (Chinese (Traditional Han script))
+[33m630321b[m Translated using Weblate (French)
+[33m0036e83[m Translated using Weblate (Estonian)
+[33m3165c58[m Translated using Weblate (Italian)
+[33mef9cb65[m Translated using Weblate (French)
+[33mb9cf7dd[m Translated using Weblate (Estonian)
+[33m907df16[m Translated using Weblate (Italian)
+[33mbb61162[m Added translation using Weblate (Italian)
+[33m5dcf5e8[m Translated using Weblate (Chinese (Traditional Han script))
+[33mb0f17a5[m Translated using Weblate (Chinese (Traditional Han script))
+[33m24c11aa[m Translated using Weblate (Chinese (Traditional Han script))
+[33me96f17d[m Translated using Weblate (Indonesian)
+[33m70a085e[m Added translation using Weblate (Chinese (Traditional Han script))
+[33m6b83a93[m Translated using Weblate (French)
+[33m1c7206a[m Update translation files
+[33m1f81157[m Translated using Weblate (French)
+[33m78d626e[m Added translation using Weblate (French)
+[33mcea0412[m Translated using Weblate (German)
+[33m8dda285[m Translated using Weblate (Estonian)
+[33m8f15533[m Translated using Weblate (German)
+[33mb8646df[m Translated using Weblate (Swedish)
+[33m296d7b9[m Setting for subtitle margin & fix subtitle opacity settings (#338)
+[33m7f50cd8[m Add default sort option for collections (#337)
+[33m8bc6fce[m Show time on playback overlay (#336)
+[33mbabfe01[m Filter out invalid TV guide programs (#334)
+[33m10c08c5[m Display episode even if season metadata is missing (#329)
