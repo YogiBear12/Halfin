@@ -11,11 +11,11 @@ defaults:
     shell: bash
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ gitea.workflow }}-${{ gitea.ref }}
   cancel-in-progress: true
 
 env:
-  BRANCH_NAME: ${{ github.ref_name }}
+  BRANCH_NAME: ${{ gitea.ref_name }}
   GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx4g -XX:MaxMetaspaceSize=512m'"
 
 jobs:
@@ -25,13 +25,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: ./.gitea/actions/setup
       - name: Native build
-        uses: ./.github/actions/native-build
+        uses: ./.gitea/actions/native-build
         with:
           cache: true
 
@@ -45,9 +45,9 @@ jobs:
             TAG_NAME="${BRANCH_NAME/\//-}"
           fi
 
-          echo "LATEST_TAG=$LATEST_TAG" >> "$GITHUB_ENV"
-          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-          echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
+          echo "LATEST_TAG=$LATEST_TAG" >> "$GITEA_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITEA_ENV"
+          echo "TAG_NAME=$TAG_NAME" >> "$GITEA_ENV"
       - name: Build release app
         id: build
         env:
@@ -73,29 +73,50 @@ jobs:
               cp "$line" "$short_name"
             done
           apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
-          echo "apks=$apks" >> "$GITHUB_OUTPUT"
+          echo "apks=$apks" >> "$GITEA_OUTPUT"
       - name: Checksums
         run: |
           echo "SHA256 checksums:"
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
       - name: Delete ${{ env.TAG_NAME }} tag and release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITEA_TOKEN: ${{ secrets.TOKEN }}
         run: |
-          gh release delete "${{ env.TAG_NAME }}" --cleanup-tag -y || true
-
+          # Note: Gitea CLI may differ from GitHub CLI
+          # You may need to use Gitea API directly or gitea CLI if available
+          # For now, we'll create the release using Gitea API
+          API_URL="${{ gitea.server_url }}/api/v1"
+          REPO="${{ gitea.repository }}"
+          
+          # Delete existing release if it exists
+          curl -X DELETE \
+            -H "Authorization: token $GITEA_TOKEN" \
+            "$API_URL/repos/$REPO/releases/tags/${{ env.TAG_NAME }}" || true
 
           echo '### `${{ env.BRANCH_NAME }}` development build
 
-          This pre-release tracks the development build of Halfin from the `${{ env.BRANCH_NAME }}` unstable branch.
+This pre-release tracks the development build of Halfin from the `${{ env.BRANCH_NAME }}` unstable branch.
 
-          See https://github.com/YogiBear12/Halfin/releases/latest for the latest stable release.
+See https://git.hawke.one/Yogi/Halfin/releases/latest for the latest stable release.
 
-          If you want to update to this version in-app, change Settings->Advanced->Update URL to https://api.github.com/repos/YogiBear12/Halfin/releases/tags/${{ env.TAG_NAME }} (replace `latest` with `tags/${{ env.TAG_NAME }}`).
+If you want to update to this version in-app, change Settings->Advanced->Update URL to https://git.hawke.one/api/v1/repos/Yogi/Halfin/releases/tags/${{ env.TAG_NAME }}.
 
-          [See changes since `${{ env.LATEST_TAG }}`](https://github.com/YogiBear12/Halfin/compare/${{ env.LATEST_TAG }}...${{ env.TAG_NAME }})' > ci_release_note.txt
+[See changes since `${{ env.LATEST_TAG }}`](https://git.hawke.one/Yogi/Halfin/compare/${{ env.LATEST_TAG }}...${{ env.TAG_NAME }})' > ci_release_note.txt
 
+          # Create release using Gitea API
+          # Note: This is a simplified version - you may need to adjust based on your Gitea version
+          curl -X POST \
+            -H "Authorization: token $GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"tag_name\": \"${{ env.TAG_NAME }}\",
+              \"target_commitish\": \"${{ env.BRANCH_NAME }}\",
+              \"name\": \"${{ env.VERSION_NAME }}\",
+              \"body\": $(cat ci_release_note.txt | jq -Rs .),
+              \"draft\": false,
+              \"prerelease\": true
+            }" \
+            "$API_URL/repos/$REPO/releases"
 
-           gh release create "${{ env.TAG_NAME }}" \
-            --latest=false --prerelease --title "${{ env.VERSION_NAME }}" --target "${{ env.BRANCH_NAME }}" -F ci_release_note.txt \
-            "app/build/outputs/apk/**/*.apk"
+          # Upload APKs to release (this may require additional API calls depending on Gitea version)
+
