@@ -24,6 +24,9 @@ val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exi
 
 fun getVersionCode(): Int {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7a61ff1 (updates to runner)
     val stdout = ByteArrayOutputStream()
     exec {
         commandLine = listOf("git", "tag", "--list", "v*", "p*")
@@ -34,6 +37,7 @@ fun getVersionCode(): Int {
         .trim()
         .lines()
         .size
+<<<<<<< HEAD
     
     // Base offset: 0.3.4-1 had versionCode 30, so ensure we start from at least 31
     // This ensures 0.3.4-2 and future versions can install over 0.3.4-1
@@ -55,6 +59,13 @@ fun getVersionCode(): Int {
     // This ensures 0.3.4-2 has a higher versionCode than 0.3.4-1
     return (major * 10000) + (minor * 100) + (patch * 10) + halfinPatch
 >>>>>>> 17633a8 (Add base offset to versionCode)
+=======
+    
+    // Base offset: 0.3.4-1 had versionCode 30, so ensure we start from at least 31
+    // This ensures 0.3.4-2 and future versions can install over 0.3.4-1
+    val baseOffset = 31
+    return maxOf(tagCount, baseOffset)
+>>>>>>> 7a61ff1 (updates to runner)
 }
 
 fun getAppVersion(): String {
