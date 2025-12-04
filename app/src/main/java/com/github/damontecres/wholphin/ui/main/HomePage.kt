@@ -385,12 +385,12 @@ fun HomePageContent(
                             ) {
                                 Text(
                                     text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.headlineSmall,  // Match MovieDetails/SeriesDetails title style
                                     color = MaterialTheme.colorScheme.onBackground,
                                 )
                                 Text(
                                     text = stringResource(R.string.loading),
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.bodyLarge,  // Match details/genres style
                                     color = MaterialTheme.colorScheme.onBackground,
                                 )
                             }
@@ -403,12 +403,12 @@ fun HomePageContent(
                             ) {
                                 Text(
                                     text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.headlineSmall,  // Match MovieDetails/SeriesDetails title style
                                     color = MaterialTheme.colorScheme.onBackground,
                                 )
                                 Text(
                                     text = r.localizedMessage,
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.bodyLarge,  // Match details/genres style
                                     color = MaterialTheme.colorScheme.error,
                                 )
                             }
@@ -553,7 +553,7 @@ fun HomePageHeader(
                 title?.let {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),  // Match SeriesDetails/MovieDetails
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -563,18 +563,19 @@ fun HomePageHeader(
                 subtitle?.let {
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium,  // Keep original style - genres not shown with episodes
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
-                if (details.isNotEmpty()) {
+                if (details.isNotEmpty() || item.data.communityRating != null || item.data.criticRating != null) {
                     DotSeparatedRow(
                         texts = details,
-                        communityRating = item.data.communityRating,  // Changed from rating to communityRating
-                        textStyle = MaterialTheme.typography.bodyLarge,
+                        communityRating = item.data.communityRating,
+                        criticRating = item.data.criticRating,  // Add critic rating support like MovieDetails/SeriesDetails
+                        textStyle = MaterialTheme.typography.titleSmall,  // Match MovieDetails (MovieQuickDetails uses titleSmall)
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
@@ -585,7 +586,7 @@ fun HomePageHeader(
                 if (overview.isNotNullOrBlank()) {
                     Text(
                         text = overview,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium,  // Match OverviewText component used in MovieDetails/SeriesDetails
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,

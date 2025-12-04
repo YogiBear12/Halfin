@@ -15,6 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -51,11 +52,11 @@ fun MovieDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxHeight(.42f),  // Apply height constraint directly
     ) {
-        // Title - keep our styling
+        // Title - match SeriesDetails styling
         Text(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onBackground,  // Match homepage: onBackground instead of onSurface
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),  // Match SeriesDetails
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 8.dp),  // Add 8dp left padding to align with summary text

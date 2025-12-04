@@ -622,7 +622,7 @@ fun SeriesDetailsHeader(
                 texts = details,
                 communityRating = dto.communityRating,
                 criticRating = dto.criticRating,  // Add critic rating support
-                textStyle = MaterialTheme.typography.bodyLarge,  // Keep our bodyLarge styling
+                textStyle = MaterialTheme.typography.titleSmall,  // Match MovieDetails (MovieQuickDetails uses titleSmall)
                 modifier = Modifier.padding(start = 8.dp),
             )
         }
