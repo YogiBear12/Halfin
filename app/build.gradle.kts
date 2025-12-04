@@ -22,20 +22,21 @@ val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
 fun getVersionCode(): Int {
-    // Calculate versionCode based on version number to ensure it always increases
-    // Format: X.Y.Z-P where P is the patch number
-    // versionCode = (X * 10000) + (Y * 100) + (Z * 10) + P
-    // This ensures versionCode always increases with version
-    val version = getAppVersion()
-    val versionParts = version.split("-")[0].split(".")
-    val major = versionParts.getOrNull(0)?.toIntOrNull() ?: 0
-    val minor = versionParts.getOrNull(1)?.toIntOrNull() ?: 0
-    val patch = versionParts.getOrNull(2)?.toIntOrNull() ?: 0
-    val halfinPatch = version.split("-").getOrNull(1)?.toIntOrNull() ?: 0
+    val stdout = ByteArrayOutputStream()
+    exec {
+        commandLine = listOf("git", "tag", "--list", "v*", "p*")
+        standardOutput = stdout
+    }
+    val tagCount = stdout
+        .toString()
+        .trim()
+        .lines()
+        .size
     
-    // Base versionCode: (major * 10000) + (minor * 100) + (patch * 10) + halfinPatch
-    // This ensures 0.3.4-2 has a higher versionCode than 0.3.4-1
-    return (major * 10000) + (minor * 100) + (patch * 10) + halfinPatch
+    // Base offset: 0.3.4-1 had versionCode 30, so ensure we start from at least 31
+    // This ensures 0.3.4-2 and future versions can install over 0.3.4-1
+    val baseOffset = 31
+    return maxOf(tagCount, baseOffset)
 }
 
 fun getAppVersion(): String {

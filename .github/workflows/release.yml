@@ -50,13 +50,27 @@ jobs:
           find app/build/outputs/apk -name '*.apk' -print0 |
             while IFS= read -r -d '' line; do
               # Halfin-release-0.3.4-2-2-arm64-v8a.apk => Halfin-0.3.4-2-arm64-v8a.apk (exact tag)
+              # Halfin-release-0.3.4-2-2-armeabi-v7a.apk => Halfin-0.3.4-2-armeabi-v7a.apk (exact tag)
+              # Halfin-release-0.3.4-2-2.apk => Halfin-0.3.4-2.apk (universal APK)
               # Halfin-release-0.3.4-2-62-g5c12e03-16-arm64-v8a.apk => Halfin-0.3.4-2-arm64-v8a.apk (with hash)
               # Remove: -release and -VERSIONCODE(-gHASH-VERSIONCODE)? but keep version and ABI
-              # Pattern: -release-[version]-[versionCode](-g[hash]-[versionCode])?(-[abi])?.apk
-              short_name="$(echo $line | sed -E 's|(.*/)?Halfin-release-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[0-9]+(-g[a-fA-F0-9]+-[0-9]+)?(-[a-z0-9-]+)?\.apk$|\1Halfin-$2$4.apk|')"
-              echo "$line => $short_name"
-              if [ "$short_name" != "$line" ] && [ -n "$short_name" ]; then
-                cp "$line" "$short_name"
+              # Only process files that match the expected Halfin-release pattern
+              if echo "$line" | grep -qE "Halfin-release-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[0-9]+(-g[a-fA-F0-9]+-[0-9]+)?(-[a-z0-9-]+)?\.apk$"; then
+                # Pattern: Halfin-release-VERSION-VERSIONCODE(-gHASH-VERSIONCODE)?(-ABI)?.apk
+                # Remove: -release- and -VERSIONCODE(-gHASH-VERSIONCODE)?, keep VERSION and ABI
+                # VersionCode can be multi-digit (e.g., 342), so use [0-9]+ not [0-9]
+                # Example: Halfin-release-0.3.4-2-342-armeabi-v7a.apk => Halfin-0.3.4-2-armeabi-v7a.apk
+                # Example: Halfin-release-0.3.4-2-2-arm64-v8a.apk => Halfin-0.3.4-2-arm64-v8a.apk
+                short_name="$(echo $line | sed -E 's|(.*/)?Halfin-release-([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-[0-9]+(-g[a-fA-F0-9]+-[0-9]+)?(-[a-z0-9-]+)?\.apk$|\1Halfin-$2$4.apk|')"
+                # Validate the short_name is correct (contains version number)
+                if echo "$short_name" | grep -qE "Halfin-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+(-[a-z0-9-]+)?\.apk$"; then
+                  echo "$line => $short_name"
+                  if [ "$short_name" != "$line" ]; then
+                    cp "$line" "$short_name"
+                  fi
+                else
+                  echo "Skipping invalid transformation: $line => $short_name"
+                fi
               fi
             done
           apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
