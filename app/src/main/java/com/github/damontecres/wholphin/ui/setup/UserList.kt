@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,11 +44,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.ClickableSurfaceBorder
+import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
@@ -89,8 +94,8 @@ fun UserList(
             contentAlignment = Alignment.Center,
         ) {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(16.dp), // Increased spacing between users
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp), // Spacing to accommodate 20% scale
+                contentPadding = PaddingValues(horizontal = 48.dp, vertical = 16.dp), // Increased padding to accommodate 20% scale
                 modifier = Modifier.wrapContentWidth(),
             ) {
                 items(users) { user ->
@@ -170,9 +175,6 @@ fun UserList(
 }
 
 /**
- * User icon card component - displays user profile picture with name below
- */
-/**
  * Generate a consistent color for a user based on their ID
  */
 @Composable
@@ -216,7 +218,6 @@ private fun UserIconCard(
     apiClient: ApiClient? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
     
     // Generate unique color for this user
     val userColor = getUserColor(user.id)
@@ -229,67 +230,71 @@ private fun UserIconCard(
     // Track image loading errors
     var imageError by remember { mutableStateOf(false) }
     
-    // Card dimensions - square card
+    // Card dimensions - circular card
     val cardSize = Cards.height2x3 * 0.75f // ~120dp (same size as before)
     
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp), // Increased to accommodate 20% scale
     ) {
-        // Square card with colored background
-        Card(
+        // Circular card with colored background
+        Surface(
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
             modifier = Modifier.size(cardSize),
-            colors = CardDefaults.colors(
-                containerColor = Color.Transparent, // Transparent so only content is visible
+            shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = if (isCurrentUser) {
+                    userColor.copy(alpha = 0.7f)
+                } else {
+                    userColor.copy(alpha = 0.5f)
+                },
+                focusedContainerColor = if (isCurrentUser) {
+                    userColor.copy(alpha = 0.9f)
+                } else {
+                    userColor.copy(alpha = 0.7f)
+                },
             ),
+            border = ClickableSurfaceDefaults.border(
+                focusedBorder = Border(
+                    border = BorderStroke(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    shape = CircleShape
+                ),
+            ),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        if (isCurrentUser && focused) {
-                            userColor.copy(alpha = 0.9f)
-                        } else if (isCurrentUser) {
-                            userColor.copy(alpha = 0.7f)
-                        } else if (focused) {
-                            userColor.copy(alpha = 0.6f)
-                        } else {
-                            userColor.copy(alpha = 0.5f)
-                        },
-                    ),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                // Circular profile image/icon - 70% of the square
-                Box(
-                    modifier = Modifier
-                        .size(cardSize * 0.7f) // 70% of card size for the circle
-                        .clip(CircleShape)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (userImageUrl != null && !imageError) {
-                        AsyncImage(
-                            model = userImageUrl,
-                            contentDescription = user.name,
-                            contentScale = ContentScale.Crop,
-                            onError = { imageError = true },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        // Show Person silhouette icon - 90% of circle size
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = user.name,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(cardSize * 0.63f), // 90% of circle (0.7 * 0.9)
-                        )
+                if (userImageUrl != null && !imageError) {
+                    AsyncImage(
+                        model = userImageUrl,
+                        contentDescription = user.name,
+                        contentScale = ContentScale.Crop,
+                        onError = { imageError = true },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                    )
+                } else {
+                    // Show big bold first letter of username
+                    val firstLetter = remember(user.name) {
+                        (user.name?.firstOrNull()?.uppercaseChar() ?: user.id.toString().firstOrNull()?.uppercaseChar())?.toString() ?: "?"
                     }
+                    Text(
+                        text = firstLetter,
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }
@@ -320,57 +325,49 @@ private fun AddUserCard(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
     
     // Use a neutral gray color for the add user card
     val addUserColor = MaterialTheme.colorScheme.surfaceVariant
     
-    // Card dimensions - square card (same as user cards)
+    // Card dimensions - circular card (same as user cards)
     val cardSize = Cards.height2x3 * 0.75f // ~120dp
     
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp), // Increased to accommodate 20% scale
     ) {
-        // Square card with colored background
-        Card(
+        // Circular card with colored background
+        Surface(
             onClick = onClick,
             interactionSource = interactionSource,
             modifier = Modifier.size(cardSize),
-            colors = CardDefaults.colors(
-                containerColor = Color.Transparent, // Transparent so only content is visible
+            shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = addUserColor.copy(alpha = 0.4f),
+                focusedContainerColor = addUserColor.copy(alpha = 0.6f),
             ),
+            border = ClickableSurfaceDefaults.border(
+                focusedBorder = Border(
+                    border = BorderStroke(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    shape = CircleShape
+                ),
+            ),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        if (focused) {
-                            addUserColor.copy(alpha = 0.6f)
-                        } else {
-                            addUserColor.copy(alpha = 0.4f)
-                        },
-                    ),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                // Circular + icon - 70% of the square
-                Box(
-                    modifier = Modifier
-                        .size(cardSize * 0.7f) // 70% of card size for the circle
-                        .clip(CircleShape)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.add_user),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.size(cardSize * 0.4f), // Size of the + icon
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.add_user),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(cardSize * 0.4f), // Size of the + icon
+                )
             }
         }
         
