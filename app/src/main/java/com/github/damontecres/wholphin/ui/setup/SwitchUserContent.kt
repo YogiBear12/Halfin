@@ -102,7 +102,7 @@ fun SwitchUserContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
-                        .fillMaxWidth(.5f)
+                        .fillMaxWidth()
                         .align(Alignment.Center)
                         .padding(16.dp),
             ) {
