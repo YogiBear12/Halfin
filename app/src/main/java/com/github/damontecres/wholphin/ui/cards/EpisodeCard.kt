@@ -33,6 +33,8 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.seasonEpisode
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import org.jellyfin.sdk.model.api.ImageType
 import kotlinx.coroutines.delay
 
 @Composable
@@ -46,6 +48,10 @@ fun EpisodeCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val dto = item?.data
+    val imageUrlService = LocalImageUrlService.current
+    val backdropImageUrl = remember(item) {
+        item?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
+    }
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
     val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
@@ -98,7 +104,7 @@ fun EpisodeCard(
                     unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
                     watchedPercent = dto?.userData?.playedPercentage,
                     useFallbackText = false,
-                    fallbackImageUrl = item?.backdropImageUrl, // Fallback to backdrop if primary image fails
+                    fallbackImageUrl = backdropImageUrl, // Fallback to backdrop if primary image fails
                     modifier =
                         Modifier
                             .fillMaxSize(),

@@ -98,6 +98,8 @@ import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
 import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
 fun HomePage(
@@ -270,11 +272,12 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    val imageUrlService = LocalImageUrlService.current
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(focusedItem) {
         // Keep previous backdrop URL until new one is ready to prevent color reset during navigation
         // Only set to null when navigating away from items (focusedItem becomes null and stays null)
-        val newBackdropUrl = focusedItem?.backdropImageUrl
+        val newBackdropUrl = focusedItem?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
         
         if (newBackdropUrl == null) {
             // User navigated away - allow backdrop to fade out before resetting
@@ -437,11 +440,24 @@ fun HomePageContent(
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         val isContinueOrNext = row.title == stringResource(R.string.continue_watching) || row.title == stringResource(R.string.next_up)
+                                        val itemImageUrl = remember(item, isContinueOrNext) {
+                                            item?.let {
+                                                if (isContinueOrNext) {
+                                                    imageUrlService.getItemImageUrl(it, ImageType.THUMB)
+                                                } else {
+                                                    imageUrlService.getItemImageUrl(it, ImageType.PRIMARY)
+                                                }
+                                            }
+                                        }
+                                        val itemBackdropUrl = remember(item) {
+                                            item?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
+                                        }
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
-                                            imageUrl = if (isContinueOrNext) item?.thumbImageUrl else item?.imageUrl,
+                                            item = item,
                                             aspectRatio = if (isContinueOrNext) AspectRatios.WIDE else AspectRatios.TALL,
-                                            fallbackImageUrl = item?.backdropImageUrl, // Fallback to backdrop if primary image fails
+                                            fallbackImageUrl = itemBackdropUrl, // Fallback to backdrop if primary image fails
+                                            imageType = if (isContinueOrNext) ImageType.THUMB else ImageType.PRIMARY, // Use THUMB for series thumbnails in Continue Watching/Next Up
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
@@ -573,6 +589,8 @@ fun HomePageHeader(
                 if (details.isNotEmpty()) {
                     DotSeparatedRow(
                         texts = details,
+                        communityRating = dto.communityRating,
+                        criticRating = dto.criticRating,
                         textStyle = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(start = 8.dp),
                     )

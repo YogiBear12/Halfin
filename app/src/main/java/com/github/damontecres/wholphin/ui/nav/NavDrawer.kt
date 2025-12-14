@@ -111,7 +111,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
-import org.jellyfin.sdk.model.api.DeviceProfile
 import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
@@ -230,7 +229,6 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
-    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
         hiltViewModel(
@@ -759,7 +757,6 @@ fun NavDrawer(
                     DestinationContent(
                         destination = destination,
                         preferences = preferences,
-                        deviceProfile = deviceProfile,
                         modifier =
                         Modifier
                             .fillMaxSize(),

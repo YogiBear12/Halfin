@@ -57,12 +57,15 @@ import kotlin.time.Duration.Companion.seconds
 class MpvPlayer(
     private val context: Context,
     enableHardwareDecoding: Boolean,
+    useGpuNext: Boolean,
 ) : BasePlayer(),
     MPVLib.EventObserver,
     TrackSelector.InvalidationListener {
     companion object {
         private const val DEBUG = false
     }
+
+    private val useGpuNext: Boolean
 
     private var isPaused: Boolean = true
     private var surface: Surface? = null
@@ -93,6 +96,7 @@ class MpvPlayer(
     private var isLoadingFile = false
 
     init {
+        this.useGpuNext = useGpuNext
         Timber.v("config-dir=${context.filesDir.path}")
         if (MPVLib.loaded) {
             try {
@@ -102,7 +106,7 @@ class MpvPlayer(
 
                 if (enableHardwareDecoding) {
                     MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
-                    MPVLib.setOptionString("vo", "gpu")
+                    MPVLib.setOptionString("vo", if (useGpuNext) "gpu-next" else "gpu")
                 } else {
                     MPVLib.setOptionString("hwdec", "no")
                 }
@@ -728,7 +732,7 @@ class MpvPlayer(
             MPVLib.command(arrayOf("loadfile", url, "replace", "-1"))
         }
 
-        MPVLib.setPropertyString("vo", "gpu")
+        MPVLib.setPropertyString("vo", if (useGpuNext) "gpu-next" else "gpu")
         Timber.d("Called loadfile")
     }
 

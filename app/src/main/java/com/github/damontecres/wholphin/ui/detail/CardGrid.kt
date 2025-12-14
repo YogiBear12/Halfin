@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,14 +33,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -50,6 +47,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -370,11 +368,7 @@ fun CardGrid(
             AlphabetButtons(
                 letters = letters,
                 currentLetter = currentLetter,
-                modifier =
-                    Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(end = 16.dp),
-                // Add end padding to push away from edge
+                modifier = Modifier.align(Alignment.CenterVertically),
                 letterClicked = { letter ->
                     scope.launch(ExceptionHandler()) {
                         val jumpPosition =
@@ -383,7 +377,6 @@ fun CardGrid(
                             }
                         Timber.d("Alphabet jump to $jumpPosition")
                         if (jumpPosition >= 0) {
-                            pager.getOrNull(jumpPosition)
                             gridState.scrollToItem(jumpPosition)
                             focusOn(jumpPosition)
                             alphabetFocus = true
@@ -437,6 +430,7 @@ fun AlphabetButtons(
     letterClicked: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -448,27 +442,29 @@ fun AlphabetButtons(
                 listState.layoutInfo.visibleItemsInfo
                     .lastOrNull()
                     ?.index ?: -1
-            if (index !in firstVisibleItemIndex..lastVisibleItemIndex) {
+            if (index < firstVisibleItemIndex || index > lastVisibleItemIndex) {
                 listState.animateScrollToItem(index)
             }
         }
     }
-    // Focus & interaction states for each letter button
     val focusRequesters = remember { List(letters.length) { FocusRequester() } }
+    
+    // Track focus state for each letter
     val interactionSources = remember { List(letters.length) { MutableInteractionSource() } }
-
+    
     // Track if the entire alphabet picker component has focus
     var alphabetPickerFocused by remember { mutableStateOf(false) }
-
+    
     LazyColumn(
-        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(1.1.dp),
+        contentPadding = PaddingValues(4.dp),
         state = listState,
         modifier =
             modifier
+                .alpha(if (alphabetPickerFocused) 0.85f else 0.2f)  // Match navdrawer: 0.85f when focused, 0.2f when not
                 .onFocusChanged { focusState ->
                     alphabetPickerFocused = focusState.hasFocus
-                }.focusProperties {
+                }
+                .focusProperties {
                     onEnter = {
                         focusRequesters[index.coerceIn(0, letters.length - 1)].tryRequestFocus()
                     }
@@ -480,65 +476,46 @@ fun AlphabetButtons(
         ) { index ->
             val interactionSource = interactionSources[index]
             val focused by interactionSource.collectIsFocusedAsState()
-
+            
             val isCurrentLetter = letters[index] == currentLetter
-            // Apply alpha to individual items, but keep selected letter fully visible when picker is unfocused
-            val itemAlpha =
-                when {
-                    isCurrentLetter && !alphabetPickerFocused -> 1f
-                    alphabetPickerFocused -> .85f
-                    else -> .25f
-                }
-
             // Only show circle background for the current letter (or when focused)
-            // Wrap in Box with clipping to prevent focus indicator from overflowing
-            Box(
+            Button(
                 modifier =
                     Modifier
-                        .size(14.dp)
-                        .clip(CircleShape)
-                        .alpha(itemAlpha),
-            ) {
-                Button(
-                    modifier =
-                        Modifier
-                            .size(14.dp)
-                            .focusRequester(focusRequesters[index]),
-                    contentPadding = PaddingValues(0.dp), // No padding to maximize text space
-                    interactionSource = interactionSource,
-                    onClick = {
-                        letterClicked.invoke(letters[index])
-                    },
-                    colors =
-                        if (isCurrentLetter || focused) {
-                            // Use default button colors for current letter or focused
-                            ButtonDefaults.colors()
-                        } else {
-                            // Transparent background for non-current letters (no circle)
-                            ButtonDefaults.colors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        },
-                ) {
-                    // Use border color for selected letter when focused, tertiary for unfocused-selected
-                    val color =
-                        when {
-                            isCurrentLetter && focused -> MaterialTheme.colorScheme.border
-                            isCurrentLetter -> MaterialTheme.colorScheme.tertiary
-                            focused -> LocalContentColor.current
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    Text(
-                        text = letters[index].toString(),
-                        color = color,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
+                        .size(24.dp)
+                        .focusRequester(focusRequesters[index]),
+                contentPadding = PaddingValues(2.dp),
+                interactionSource = interactionSource,
+                onClick = {
+                    letterClicked.invoke(letters[index])
+                },
+                colors = if (isCurrentLetter || focused) {
+                    // Use default button colors for current letter or focused
+                    ButtonDefaults.colors()
+                } else {
+                    // Transparent background for non-current letters (no circle)
+                    ButtonDefaults.colors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                }
+                },
+            ) {
+                // Use border color (blue highlight) for selected letter, matching navdrawer
+                val color =
+                    when {
+                        isCurrentLetter && focused -> MaterialTheme.colorScheme.border  // Blue highlight when selected and focused
+                        isCurrentLetter -> MaterialTheme.colorScheme.border  // Blue highlight for selected letter
+                        focused -> LocalContentColor.current  // Normal color when focused but not selected
+                        else -> MaterialTheme.colorScheme.onSurface  // Base color
+                    }
+                Text(
+                    text = letters[index].toString(),
+                    color = color,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -24,7 +25,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.util.FocusPair
+import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
 fun <T> ItemRow(
@@ -111,6 +114,10 @@ fun BannerItemRow(
     onLongClickItem = onLongClickItem,
     modifier = modifier,
     cardContent = { index, item, modifier, onClick, onLongClick ->
+        val imageUrlService = LocalImageUrlService.current
+        val backdropImageUrl = remember(item) {
+            item?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
+        }
         BannerCard(
             name = title,
             item = item,
@@ -123,7 +130,7 @@ fun BannerItemRow(
             onLongClick = onLongClick,
             modifier = modifier,
             interactionSource = null,
-            fallbackImageUrl = item?.backdropImageUrl, // Fallback to backdrop if primary image fails
+            fallbackImageUrl = backdropImageUrl, // Fallback to backdrop if primary image fails
         )
     },
     focusPair = focusPair,

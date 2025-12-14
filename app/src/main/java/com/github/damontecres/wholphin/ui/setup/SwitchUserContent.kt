@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.setup
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -34,6 +36,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -86,33 +89,33 @@ fun SwitchUserContent(
     var switchUserWithPin by remember { mutableStateOf<JellyfinUser?>(null) }
 
     currentServer?.let { server ->
+        // Create API client for fetching user images (no auth needed for public user images)
+        val apiClient = remember(server.url) {
+            viewModel.jellyfin.createApi(server.url)
+        }
+        
         Box(
             modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth(.5f)
                         .align(Alignment.Center)
                         .padding(16.dp),
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.select_user),
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = server.name ?: server.url,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.select_user),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = server.name ?: server.url,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 UserList(
                     users = users,
                     currentUser = currentUser,
@@ -133,6 +136,7 @@ fun SwitchUserContent(
                         viewModel.navigationManager.navigateTo(Destination.ServerList)
                     },
                     modifier = Modifier.fillMaxWidth(),
+                    apiClient = apiClient, // Pass apiClient to UserList for user images
                 )
             }
         }
@@ -162,7 +166,7 @@ fun SwitchUserContent(
                         Modifier
                             .focusGroup()
                             .padding(16.dp)
-                            .fillMaxWidth(.4f),
+                            .fillMaxWidth(.66f),
                 ) {
                     if (useQuickConnect) {
                         if (quickConnect == null && userState !is LoadingState.Error) {
@@ -188,8 +192,6 @@ fun SwitchUserContent(
                                 text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
                             )
                             Text(
                                 text = quickConnect?.code ?: "Failed to get code",
@@ -227,8 +229,6 @@ fun SwitchUserContent(
                             text = "Enter username/password to login to ${server.name ?: server.url}",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
                         )
                         UserStateError(userState)
                         Row(

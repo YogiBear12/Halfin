@@ -51,8 +51,6 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
-import com.github.damontecres.wholphin.data.model.chooseSource
-import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -72,8 +70,9 @@ import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.components.chooseStream as chooseStreamDialog
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
-import com.github.damontecres.wholphin.ui.getAudioDisplay
-import com.github.damontecres.wholphin.ui.getSubtitleDisplay
+import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import org.jellyfin.sdk.model.api.ImageType
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -96,6 +95,7 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -195,6 +195,7 @@ fun MovieDetails(
                             ItemDetailsDialogInfo(
                                 title = movie.name ?: context.getString(R.string.unknown),
                                 overview = movie.data.overview,
+                                genres = movie.data.genres.orEmpty(),
                                 files = movie.data.mediaSources.orEmpty(),
                             )
                     },
@@ -208,7 +209,7 @@ fun MovieDetails(
                                         context = context,
                                         item = movie,
                                         seriesId = null,
-                                        sourceId = chosenStreams?.sourceId,
+                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         actions = moreActions,
@@ -227,7 +228,7 @@ fun MovieDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            chooseSource(
+                                            viewModel.streamChoiceService.chooseSource(
                                                 movie.data,
                                                 chosenStreams?.itemPlayback,
                                             )?.let { source ->
@@ -246,6 +247,15 @@ fun MovieDetails(
                                                         },
                                                     )
                                             }
+                                        },
+                                        onShowOverview = {
+                                            overviewDialog =
+                                                ItemDetailsDialogInfo(
+                                                    title = movie.name ?: context.getString(R.string.unknown),
+                                                    overview = movie.data.overview,
+                                                    genres = movie.data.genres.orEmpty(),
+                                                    files = movie.data.mediaSources.orEmpty(),
+                                                )
                                         },
                                     ),
                             )
@@ -383,7 +393,10 @@ fun MovieDetailsContent(
     var position by rememberInt(0)
     val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val dto = movie.data
-    val backdropImageUrl = movie.backdropImageUrl
+    val imageUrlService = LocalImageUrlService.current
+    val backdropImageUrl = remember(movie) {
+        imageUrlService.getItemImageUrl(movie, ImageType.BACKDROP)
+    }
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -421,74 +434,32 @@ fun MovieDetailsContent(
                         chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
-                        Modifier
-                            .fillMaxWidth(.6f) // Match homepage width
-                            .fillMaxHeight(.42f) // Match homepage header height
-                            .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Reduced top padding to 8.dp
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(.6f) // Match homepage width
+                                .padding(start = 0.dp, top = 8.dp, end = 16.dp, bottom = 16.dp), // Reduced top padding to 8.dp
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically, // Middle align with buttons
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        ExpandablePlayButtons(
-                            resumePosition = resumePosition,
-                            watched = dto.userData?.played ?: false,
-                            favorite = dto.userData?.isFavorite ?: false,
-                            playOnClick = {
+                    ExpandablePlayButtons(
+                        resumePosition = resumePosition,
+                        watched = dto.userData?.played ?: false,
+                        favorite = dto.userData?.isFavorite ?: false,
+                        playOnClick = {
+                            position = HEADER_ROW
+                            playOnClick.invoke(it)
+                        },
+                        moreOnClick = moreOnClick,
+                        watchOnClick = watchOnClick,
+                        favoriteOnClick = favoriteOnClick,
+                        buttonOnFocusChanged = {
+                            if (it.isFocused) {
                                 position = HEADER_ROW
-                                playOnClick.invoke(it)
-                            },
-                            moreOnClick = moreOnClick,
-                            watchOnClick = watchOnClick,
-                            favoriteOnClick = favoriteOnClick,
-                            buttonOnFocusChanged = {
-                                if (it.isFocused) {
-                                    position = HEADER_ROW
-                                    scope.launch(ExceptionHandler()) {
-                                        bringIntoViewRequester.bringIntoView()
-                                    }
+                                scope.launch(ExceptionHandler()) {
+                                    bringIntoViewRequester.bringIntoView()
                                 }
-                            },
-                            modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
-                        )
-                        
-                        // Technical details middle-aligned with buttons row
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            chooseStream(movie.data, chosenStreams?.itemPlayback, MediaStreamType.VIDEO, preferences)
-                                ?.displayTitle
-                                ?.let {
-                                    TitleValueText(
-                                        stringResource(R.string.video),
-                                        it,
-                                        modifier = Modifier.widthIn(max = 160.dp),
-                                    )
-                                }
-                            val audioDisplay = getAudioDisplay(movie.data, chosenStreams, preferences)
-                            audioDisplay
-                                ?.let {
-                                    TitleValueText(
-                                        stringResource(R.string.audio),
-                                        it,
-                                        modifier = Modifier.widthIn(max = 200.dp),
-                                    )
-                                }
-
-                            getSubtitleDisplay(movie.data, chosenStreams)
-                                ?.let {
-                                    if (it.isNotNullOrBlank()) {
-                                        TitleValueText(
-                                            stringResource(R.string.subtitles),
-                                            it,
-                                            modifier = Modifier.widthIn(max = 160.dp),
-                                        )
-                                    }
-                                }
-                        }
-                    }
+                            }
+                        },
+                        modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
+                    )
                 }
             }
             if (people.isNotEmpty()) {
@@ -632,8 +603,7 @@ fun TrailerRow(
                         val baseItem = item.baseItem
                         BannerCard(
                             name = baseItem.name,
-                            imageUrl = baseItem.imageUrl,
-                            fallbackImageUrl = baseItem.backdropImageUrl,
+                            item = baseItem,
                             onClick = { onClickTrailer.invoke(item) },
                             onLongClick = {},
                             played = baseItem.data.userData?.played ?: false,
@@ -653,7 +623,7 @@ fun TrailerRow(
                             }
                         BannerCard(
                             name = item.name,
-                            imageUrl = null,
+                            item = null,
                             onClick = { onClickTrailer.invoke(item) },
                             onLongClick = {},
                             cornerText = subtitle,

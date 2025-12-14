@@ -149,14 +149,12 @@ fun RecommendedContent(
         LoadingState.Success -> {
             HomePageContent(
                 homeRows = rows,
+                appThemeColors = preferences.appPreferences.interfacePreferences.appThemeColors,
                 onClickItem = { _, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
                 onLongClickItem = { position, item ->
                     moreDialog.makePresent(RowColumnItem(position, item))
-                },
-                onClickPlay = { _, item ->
-                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
