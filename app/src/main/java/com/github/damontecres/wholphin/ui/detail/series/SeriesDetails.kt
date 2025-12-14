@@ -61,6 +61,7 @@ import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
+import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -81,8 +82,10 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.seriesProductionYears
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -176,6 +179,7 @@ fun SeriesDetails(
                             ItemDetailsDialogInfo(
                                 title = item.name ?: context.getString(R.string.unknown),
                                 overview = item.data.overview,
+                                genres = item.data.genres.orEmpty(),
                                 files = listOf(),
                             )
                     },
@@ -280,7 +284,7 @@ fun SeriesDetailsContent(
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
-    playOnClick: () -> Unit,
+    playOnClick: (Boolean) -> Unit,  // Boolean parameter for shuffle
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
@@ -292,13 +296,17 @@ fun SeriesDetailsContent(
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val onBackdropChange = LocalBackdropHandler.current
+    val imageUrlService = LocalImageUrlService.current
 
     var position by rememberInt()
     val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     
     // Set backdrop URL when series loads - this should NOT change when scrolling episodes
-    LaunchedEffect(series.backdropImageUrl) {
-        onBackdropChange(series.backdropImageUrl)
+    val backdropImageUrl = remember(series) {
+        imageUrlService.getItemImageUrl(series, org.jellyfin.sdk.model.api.ImageType.BACKDROP)
+    }
+    LaunchedEffect(backdropImageUrl) {
+        onBackdropChange(backdropImageUrl)
     }
     
     LaunchedEffect(Unit) {
@@ -331,9 +339,9 @@ fun SeriesDetailsContent(
                         played = played,
                         favorite = favorite,
                         overviewOnClick = overviewOnClick,
-                        playOnClick = {
+                        playOnClick = { shuffle ->
                             position = HEADER_ROW
-                            playOnClick.invoke()
+                            playOnClick.invoke(shuffle)
                         },
                         watchOnClick = watchOnClick,
                         favoriteOnClick = favoriteOnClick,
@@ -357,7 +365,24 @@ fun SeriesDetailsContent(
                             icon = Icons.Default.PlayArrow,
                             onClick = {
                                 position = HEADER_ROW
-                                playOnClick.invoke()
+                                playOnClick.invoke(false)  // false = normal play
+                            },
+                            modifier =
+                                Modifier.onFocusChanged {
+                                    if (it.isFocused) {
+                                        scope.launch(ExceptionHandler()) {
+                                            bringIntoViewRequester.bringIntoView()
+                                        }
+                                    }
+                                },
+                        )
+                        // Add shuffle button from upstream
+                        ExpandableFaButton(
+                            title = R.string.shuffle,
+                            iconStringRes = R.string.fa_shuffle,
+                            onClick = {
+                                position = HEADER_ROW
+                                playOnClick.invoke(true)  // true = shuffle
                             },
                             modifier =
                                 Modifier.onFocusChanged {
@@ -400,7 +425,7 @@ fun SeriesDetailsContent(
             }
             item {
                 ItemRow(
-                        title = stringResource(R.string.tv_seasons),
+                        title = stringResource(R.string.tv_seasons) + " (${seasons.size})",  // Add season count from upstream
                         items = seasons,
                         onClickItem = { index, item ->
                             position = SEASONS_ROW
@@ -555,91 +580,75 @@ fun SeriesDetailsHeader(
     favorite: Boolean,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
-    playOnClick: () -> Unit,
+    playOnClick: (Boolean) -> Unit,  // Boolean parameter for shuffle
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val dto = series.data
-    
-    // Match MovieDetailsHeader structure: Box with fillMaxHeight(.42f), Column with fillMaxSize
-    Box(
-        modifier = modifier, // Modifier already has fillMaxHeight(.42f) applied from caller
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            // Title
-            Text(
-                text = series.name ?: stringResource(R.string.unknown),
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+        // Title - keep our styling
+        Text(
+            text = series.name ?: stringResource(R.string.unknown),
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+
+        // Use DotSeparatedRow with rating and critic rating support (from upstream)
+        val details =
+            remember(dto) {
+                buildList {
+                    dto.seriesProductionYears?.let(::add)
+                    val duration = dto.runTimeTicks?.ticks
+                    duration
+                        ?.roundMinutes
+                        ?.toString()
+                        ?.let(::add)
+                    dto.officialRating?.let(::add)
+                }
+            }
+        if (details.isNotEmpty() || dto.communityRating != null || dto.criticRating != null) {
+            DotSeparatedRow(
+                texts = details,
+                communityRating = dto.communityRating,
+                criticRating = dto.criticRating, // Add critic rating support
+                textStyle = MaterialTheme.typography.titleSmall, // Match MovieDetails (MovieQuickDetails uses titleSmall)
                 modifier = Modifier.padding(start = 8.dp),
             )
+        }
 
-            // Rating and year with dot separator (match MovieDetailsHeader)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+        // Genres - use GenreText component with our styling
+        dto.genres?.letNotEmpty {
+            GenreText(
+                genres = it,
+                textStyle = MaterialTheme.typography.bodyLarge, // Our styling: bodyLarge instead of bodyMedium
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 8.dp),
-            ) {
-                dto.communityRating?.let {
-                    SimpleStarRating(
-                        it,
-                        Modifier.height(20.dp),
-                    )
-                }
-                val details =
-                    buildList {
-                        dto.productionYear?.let { add(it.toString()) }
-                        val duration = dto.runTimeTicks?.ticks
-                        duration
-                            ?.roundMinutes
-                            ?.toString()
-                            ?.let {
-                                add(it)
-                            }
-                        dto.officialRating?.let(::add)
-                    }
-                if (details.isNotEmpty()) {
-                    DotSeparatedRow(
-                        texts = details,
-                        textStyle = MaterialTheme.typography.bodyLarge, // Match MovieDetailsHeader
-                        modifier = Modifier,
-                    )
-                }
-            }
+            )
+        }
 
-            // Genres (comma separated)
-            dto.genres?.letNotEmpty {
-                Text(
-                    text = it.joinToString(", "),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
+        // Description (3 lines for series details)
+        dto.overview?.let { overview ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val focused = interactionSource.collectIsFocusedAsState().value
+            LaunchedEffect(focused) {
+                if (focused) bringIntoViewRequester.bringIntoView()
             }
-
-            // Description (3 lines for series details)
-            dto.overview?.let { overview ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val focused = interactionSource.collectIsFocusedAsState().value
-                LaunchedEffect(focused) {
-                    if (focused) bringIntoViewRequester.bringIntoView()
-                }
-                OverviewText(
-                    overview = overview,
-                    maxLines = 3,
-                    onClick = overviewOnClick,
-                    textBoxHeight = Dp.Unspecified,
-                    interactionSource = interactionSource,
-                    modifier = Modifier.fillMaxWidth(0.7f).padding(0.dp),
-                )
-            }
+            OverviewText(
+                overview = overview,
+                maxLines = 3,
+                onClick = overviewOnClick,
+                textBoxHeight = Dp.Unspecified,
+                interactionSource = interactionSource,
+                modifier = Modifier.fillMaxWidth(0.7f).padding(0.dp),
+            )
         }
     }
 }

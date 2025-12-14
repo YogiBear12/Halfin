@@ -62,6 +62,7 @@ fun ItemCardImage(
     imageType: ImageType = ImageType.PRIMARY,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    fallbackImageUrl: String? = null, // Fallback to backdrop if primary image fails
 ) {
     val imageUrlService = LocalImageUrlService.current
     var size by remember { mutableStateOf(IntSize.Zero) }
@@ -78,6 +79,9 @@ fun ItemCardImage(
                 null
             }
         }
+    val computedFallbackUrl = remember(item, fallbackImageUrl) {
+        fallbackImageUrl ?: item?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
+    }
     ItemCardImage(
         imageUrl = imageUrl,
         name = name,
@@ -95,6 +99,7 @@ fun ItemCardImage(
             },
         useFallbackText = useFallbackText,
         contentScale = contentScale,
+        fallbackImageUrl = computedFallbackUrl,
     )
 }
 

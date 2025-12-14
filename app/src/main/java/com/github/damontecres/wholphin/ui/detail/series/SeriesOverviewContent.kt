@@ -57,7 +57,9 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.ImageType
 import kotlin.time.Duration
 
 @Composable
@@ -67,10 +69,13 @@ fun SeriesOverviewContent(
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
     chosenStreams: ChosenStreams?,
+    peopleInEpisode: List<com.github.damontecres.wholphin.data.model.Person>,
     position: SeriesOverviewPosition,
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
     episodeRowFocusRequester: FocusRequester,
+    castCrewRowFocusRequester: FocusRequester,
+    guestStarRowFocusRequester: FocusRequester,
     onFocus: (SeriesOverviewPosition) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
@@ -79,10 +84,12 @@ fun SeriesOverviewContent(
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     overviewOnClick: () -> Unit,
+    personOnClick: (com.github.damontecres.wholphin.data.model.Person) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val onBackdropChange = LocalBackdropHandler.current
+    val imageUrlService = LocalImageUrlService.current
     var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
         logTab("series_overview", selectedTabIndex)
@@ -160,7 +167,9 @@ fun SeriesOverviewContent(
             item {
                 // Episode header
                 FocusedEpisodeHeader(
+                    preferences = preferences,
                     ep = focusedEpisode,
+                    chosenStreams = chosenStreams,
                     overviewOnClick = overviewOnClick,
                     modifier = Modifier.fillMaxWidth(.66f),
                 )
@@ -203,9 +212,15 @@ fun SeriesOverviewContent(
                                     val cornerText =
                                         episode?.data?.indexNumber?.let { "E$it" }
                                             ?: episode?.data?.premiereDate?.let(::formatDateTime)
+                                    val episodeImageUrl = remember(episode) {
+                                        episode?.let { imageUrlService.getItemImageUrl(it, ImageType.PRIMARY) }
+                                    }
+                                    val episodeBackdropUrl = remember(episode) {
+                                        episode?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
+                                    }
                                     BannerCard(
                                         name = episode?.name,
-                                        imageUrl = episode?.imageUrl,
+                                        item = episode,
                                         aspectRatio =
                                             episode
                                                 ?.aspectRatio
@@ -217,7 +232,7 @@ fun SeriesOverviewContent(
                                             episode?.data?.userData?.playedPercentage
                                                 ?: 0.0,
                                         onClick = { if (episode != null) onClick.invoke(episode) },
-                                        fallbackImageUrl = episode?.backdropImageUrl, // Fallback to backdrop if primary image fails
+                                        fallbackImageUrl = episodeBackdropUrl, // Fallback to backdrop if primary image fails
                                         onLongClick = {
                                             if (episode != null) {
                                                 onLongClick.invoke(

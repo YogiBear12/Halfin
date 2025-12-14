@@ -175,7 +175,7 @@ class HomeViewModel
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, false) }
+                    .map { BaseItem.from(it, api, true) } // Use series/movie thumbnails for Continue Watching
             return items
         }
 
@@ -201,7 +201,7 @@ class HomeViewModel
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, false) }
+                    .map { BaseItem.from(it, api, true) } // Use series/movie thumbnails for Next Up
             return nextUp
         }
 

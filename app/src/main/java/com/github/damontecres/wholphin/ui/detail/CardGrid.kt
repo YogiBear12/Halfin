@@ -38,6 +38,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -46,9 +47,12 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -57,8 +61,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.cards.GridCard
-import com.github.damontecres.wholphin.ui.components.Button
-import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.playback.isBackwardButton
 import com.github.damontecres.wholphin.ui.playback.isForwardButton
@@ -446,23 +448,38 @@ fun AlphabetButtons(
         }
     }
     val focusRequesters = remember { List(letters.length) { FocusRequester() } }
+    
+    // Track focus state for each letter
+    val interactionSources = remember { List(letters.length) { MutableInteractionSource() } }
+    
+    // Track if the entire alphabet picker component has focus
+    var alphabetPickerFocused by remember { mutableStateOf(false) }
+    
     LazyColumn(
         contentPadding = PaddingValues(4.dp),
         state = listState,
         modifier =
-            modifier.focusProperties {
-                onEnter = {
-                    focusRequesters[index.coerceIn(0, letters.length - 1)].tryRequestFocus()
+            modifier
+                .alpha(if (alphabetPickerFocused) 0.85f else 0.2f)  // Match navdrawer: 0.85f when focused, 0.2f when not
+                .onFocusChanged { focusState ->
+                    alphabetPickerFocused = focusState.hasFocus
                 }
-            },
+                .focusProperties {
+                    onEnter = {
+                        focusRequesters[index.coerceIn(0, letters.length - 1)].tryRequestFocus()
+                    }
+                },
     ) {
         items(
             letters.length,
             key = { letters[it] },
         ) { index ->
-            val interactionSource = remember { MutableInteractionSource() }
+            val interactionSource = interactionSources[index]
             val focused by interactionSource.collectIsFocusedAsState()
-            TextButton(
+            
+            val isCurrentLetter = letters[index] == currentLetter
+            // Only show circle background for the current letter (or when focused)
+            Button(
                 modifier =
                     Modifier
                         .size(24.dp)
@@ -472,12 +489,26 @@ fun AlphabetButtons(
                 onClick = {
                     letterClicked.invoke(letters[index])
                 },
+                colors = if (isCurrentLetter || focused) {
+                    // Use default button colors for current letter or focused
+                    ButtonDefaults.colors()
+                } else {
+                    // Transparent background for non-current letters (no circle)
+                    ButtonDefaults.colors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                },
             ) {
+                // Use border color (blue highlight) for selected letter, matching navdrawer
                 val color =
-                    if (!focused && letters[index] == currentLetter) {
-                        MaterialTheme.colorScheme.tertiary
-                    } else {
-                        LocalContentColor.current
+                    when {
+                        isCurrentLetter && focused -> MaterialTheme.colorScheme.border  // Blue highlight when selected and focused
+                        isCurrentLetter -> MaterialTheme.colorScheme.border  // Blue highlight for selected letter
+                        focused -> LocalContentColor.current  // Normal color when focused but not selected
+                        else -> MaterialTheme.colorScheme.onSurface  // Base color
                     }
                 Text(
                     text = letters[index].toString(),

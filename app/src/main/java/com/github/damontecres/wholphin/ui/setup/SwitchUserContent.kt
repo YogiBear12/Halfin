@@ -89,6 +89,11 @@ fun SwitchUserContent(
     var switchUserWithPin by remember { mutableStateOf<JellyfinUser?>(null) }
 
     currentServer?.let { server ->
+        // Create API client for fetching user images (no auth needed for public user images)
+        val apiClient = remember(server.url) {
+            viewModel.jellyfin.createApi(server.url)
+        }
+        
         Box(
             modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
         ) {
@@ -99,11 +104,7 @@ fun SwitchUserContent(
                     Modifier
                         .fillMaxWidth(.5f)
                         .align(Alignment.Center)
-                        .padding(16.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ),
+                        .padding(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.select_user),
@@ -134,13 +135,8 @@ fun SwitchUserContent(
                     onSwitchServer = {
                         viewModel.navigationManager.navigateTo(Destination.ServerList)
                     },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                                shape = RoundedCornerShape(16.dp),
-                            ),
+                    modifier = Modifier.fillMaxWidth(),
+                    apiClient = apiClient, // Pass apiClient to UserList for user images
                 )
             }
         }

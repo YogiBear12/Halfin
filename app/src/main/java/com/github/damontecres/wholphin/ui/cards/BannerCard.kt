@@ -61,11 +61,12 @@ fun BannerCard(
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
     fallbackImageUrl: String? = null, // Fallback to backdrop if primary image fails
+    imageType: ImageType = ImageType.PRIMARY, // Allow specifying image type (e.g., THUMB for series thumbnails)
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
     val imageUrl =
-        remember(item, cardHeight) {
+        remember(item, cardHeight, imageType) {
             if (item != null) {
                 val fillHeight =
                     if (cardHeight != Dp.Unspecified) {
@@ -77,7 +78,7 @@ fun BannerCard(
                     }
                 imageUrlService.getItemImageUrl(
                     item,
-                    ImageType.PRIMARY,
+                    imageType,
                     fillWidth = null,
                     fillHeight = fillHeight,
                 )

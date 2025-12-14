@@ -39,7 +39,7 @@ fun PersonRow(
     ) {
         Text(
             text = stringResource(title),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(start = 8.dp),
         )
