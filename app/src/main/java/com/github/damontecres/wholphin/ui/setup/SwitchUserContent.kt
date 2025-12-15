@@ -197,6 +197,8 @@ fun SwitchUserContent(
                                 text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                             Text(
                                 text = quickConnect?.code ?: "Failed to get code",
@@ -234,6 +236,8 @@ fun SwitchUserContent(
                             text = "Enter username/password to login to ${server.name ?: server.url}",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         UserStateError(userState)
                         Row(
