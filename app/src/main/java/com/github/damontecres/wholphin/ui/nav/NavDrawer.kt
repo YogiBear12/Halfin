@@ -316,16 +316,15 @@ fun NavDrawer(
 
     val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else 40.dp)
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
-    val appTheme = preferences.appPreferences.interfacePreferences.appThemeColors
-    val isPlexperience = appTheme == AppThemeColors.PLEXPERIENCE
     
     // Backdrop state lifted to NavDrawer
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
     // Initialize with generic colors to prevent fade to black/transparent on first load
     // These will be replaced by extracted colors when available
-    val genericPrimary = Color(0xFF1E1F25) // surfaceContainerDark
-    val genericSecondary = Color(0xFF292A2F) // surfaceContainerHighDark
-    val genericTertiary = Color(0xFF38393F) // surfaceBrightDark
+    // Use theme-aware colors from MaterialTheme.colorScheme
+    val genericPrimary = MaterialTheme.colorScheme.surfaceVariant
+    val genericSecondary = MaterialTheme.colorScheme.surface
+    val genericTertiary = MaterialTheme.colorScheme.surfaceVariant
     var dynamicColorPrimary by remember { mutableStateOf(genericPrimary.copy(alpha = 0.4f)) }
     var dynamicColorSecondary by remember { mutableStateOf(genericSecondary.copy(alpha = 0.4f)) }
     var dynamicColorTertiary by remember { mutableStateOf(genericTertiary.copy(alpha = 0.35f)) }
@@ -339,230 +338,219 @@ fun NavDrawer(
     var backdropReadyForColors by remember { mutableStateOf(false) }
     var currentBackdropKey by remember { mutableStateOf<String?>(null) }
 
-    if (isPlexperience) {
-        // Debounce backdrop URL changes to detect when navigation has stopped
-        LaunchedEffect(backdropImageUrl) {
-            val currentUrl = backdropImageUrl
-            debounceJob?.cancel()
-            debounceJob = scope.launch {
-                delay(400) // Wait for navigation to stop (400ms debounce)
-                if (backdropImageUrl == currentUrl) {
-                    stableBackdropUrl = backdropImageUrl
-                }
+    // Debounce backdrop URL changes to detect when navigation has stopped
+    LaunchedEffect(backdropImageUrl) {
+        val currentUrl = backdropImageUrl
+        debounceJob?.cancel()
+        debounceJob = scope.launch {
+            delay(400) // Wait for navigation to stop (400ms debounce)
+            if (backdropImageUrl == currentUrl) {
+                stableBackdropUrl = backdropImageUrl
             }
         }
-        
-        // Reset backdrop loading state when URL changes
-        LaunchedEffect(backdropImageUrl) {
-            if (backdropImageUrl != currentBackdropKey) {
-                backdropLoaded = false
-                backdropReadyForColors = false
-                currentBackdropKey = backdropImageUrl
-            }
+    }
+    
+    // Reset backdrop loading state when URL changes
+    LaunchedEffect(backdropImageUrl) {
+        if (backdropImageUrl != currentBackdropKey) {
+            backdropLoaded = false
+            backdropReadyForColors = false
+            currentBackdropKey = backdropImageUrl
         }
+    }
+    
+    // Coordinate color extraction with backdrop loading
+    // Extract colors when stable URL is set. For cached colors, this returns immediately.
+    // For new extractions, the function will load the image and extract colors.
+    // Also depend on backdropImageUrl to ensure cached colors apply when navigating back
+    LaunchedEffect(stableBackdropUrl, backdropImageUrl) {
+        val currentStableUrl = stableBackdropUrl
+        val currentBackdropUrl = backdropImageUrl
         
-        // Coordinate color extraction with backdrop loading
-        // Extract colors when stable URL is set. For cached colors, this returns immediately.
-        // For new extractions, the function will load the image and extract colors.
-        // Also depend on backdropImageUrl to ensure cached colors apply when navigating back
-        LaunchedEffect(stableBackdropUrl, backdropImageUrl) {
-            val currentStableUrl = stableBackdropUrl
-            val currentBackdropUrl = backdropImageUrl
+        if (currentStableUrl != null && currentBackdropUrl == currentStableUrl) {
+            // No delay - extract colors immediately for cached items, or as soon as possible for new items
+            delay(0) // No delay
             
-            if (currentStableUrl != null && currentBackdropUrl == currentStableUrl) {
-                // No delay - extract colors immediately for cached items, or as soon as possible for new items
-                delay(0) // No delay
+            // Double-check URL hasn't changed during delay
+            if (backdropImageUrl == currentStableUrl) {
+                backdropReadyForColors = true
                 
-                // Double-check URL hasn't changed during delay
-                if (backdropImageUrl == currentStableUrl) {
-                    backdropReadyForColors = true
-                    
-                    // Extract colors for the stable backdrop URL
-                    // If colors are cached, this returns immediately
-                    // If not cached, it will load the image and extract colors
-                    val extractedColors = extractColorsFromBackdrop(currentStableUrl, context)
-                    
-                    // Only update colors if:
-                    // 1. Extraction succeeded
-                    // 2. The backdrop URL hasn't changed during extraction (still the current stable one)
-                    // This keeps previous colors visible during extraction and prevents fade to black/transparent
-                    if (extractedColors != null && backdropImageUrl == currentStableUrl) {
-                        dynamicColorPrimary = extractedColors.primary
-                        dynamicColorSecondary = extractedColors.secondary
-                        dynamicColorTertiary = extractedColors.tertiary
-                    }
-                    // If extraction fails or backdrop changed, colors remain unchanged (previous colors stay visible)
-                }
-            } else if (currentStableUrl == null && currentBackdropUrl == null) {
-                // User has navigated away - backdrop URL is null and stable
-                // Wait for backdrop fade-out before resetting colors
-                delay(800) // Wait for backdrop fade-out
+                // Extract colors for the stable backdrop URL
+                // If colors are cached, this returns immediately
+                // If not cached, it will load the image and extract colors
+                val extractedColors = extractColorsFromBackdrop(currentStableUrl, context)
                 
-                // Only reset if still null (user hasn't navigated to another item)
-                if (backdropImageUrl == null) {
-                    dynamicColorPrimary = genericPrimary.copy(alpha = 0.4f)
-                    dynamicColorSecondary = genericSecondary.copy(alpha = 0.4f)
-                    dynamicColorTertiary = genericTertiary.copy(alpha = 0.35f)
+                // Only update colors if:
+                // 1. Extraction succeeded
+                // 2. The backdrop URL hasn't changed during extraction (still the current stable one)
+                // This keeps previous colors visible during extraction and prevents fade to black/transparent
+                if (extractedColors != null && backdropImageUrl == currentStableUrl) {
+                    dynamicColorPrimary = extractedColors.primary
+                    dynamicColorSecondary = extractedColors.secondary
+                    dynamicColorTertiary = extractedColors.tertiary
                 }
+                // If extraction fails or backdrop changed, colors remain unchanged (previous colors stay visible)
+            }
+        } else if (currentStableUrl == null && currentBackdropUrl == null) {
+            // User has navigated away - backdrop URL is null and stable
+            // Wait for backdrop fade-out before resetting colors
+            delay(800) // Wait for backdrop fade-out
+            
+            // Only reset if still null (user hasn't navigated to another item)
+            if (backdropImageUrl == null) {
+                dynamicColorPrimary = genericPrimary.copy(alpha = 0.4f)
+                dynamicColorSecondary = genericSecondary.copy(alpha = 0.4f)
+                dynamicColorTertiary = genericTertiary.copy(alpha = 0.35f)
             }
         }
     }
 
     val drawerBackground by animateColorAsState(
-        if (isPlexperience) {
-            if (drawerState.isOpen) {
-                Color.Black.copy(alpha = 0.8f)
-            } else {
-                Color.Transparent
-            }
-        } else if (drawerState.isOpen) {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(
-                1.dp,
-            )
+        if (drawerState.isOpen) {
+            Color.Black.copy(alpha = 0.8f)
         } else {
-            MaterialTheme.colorScheme.surface
+            Color.Transparent
         },
     )
     val spacedBy = 4.dp
 
     Box(modifier = modifier.fillMaxSize()) {
         // Background Rendering (Behind content, and extending behind drawer)
-        if (isPlexperience) {
-            val baseBackgroundColor = MaterialTheme.colorScheme.background
+        // Universal backdrop and color extraction for all themes
+        val baseBackgroundColor = MaterialTheme.colorScheme.background
 
-            val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
-            val targetSecondary = if (dynamicColorSecondary != Color.Transparent) dynamicColorSecondary else Color.Transparent
-            val targetTertiary = if (dynamicColorTertiary != Color.Transparent) dynamicColorTertiary else Color.Transparent
+        val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
+        val targetSecondary = if (dynamicColorSecondary != Color.Transparent) dynamicColorSecondary else Color.Transparent
+        val targetTertiary = if (dynamicColorTertiary != Color.Transparent) dynamicColorTertiary else Color.Transparent
 
-            // Smooth color transitions matching Plex's behavior - colors fade in from backdrop
-            // Using animation duration (1250ms) for smooth transitions
-            val animPrimary by animateColorAsState(
-                targetPrimary,
-                animationSpec = tween(1250),
-                label = "primary"
+        // Smooth color transitions matching Plex's behavior - colors fade in from backdrop
+        // Using animation duration (1250ms) for smooth transitions
+        val animPrimary by animateColorAsState(
+            targetPrimary,
+            animationSpec = tween(1250),
+            label = "primary"
+        )
+        val animSecondary by animateColorAsState(
+            targetSecondary,
+            animationSpec = tween(1250),
+            label = "secondary"
+        )
+        val animTertiary by animateColorAsState(
+            targetTertiary,
+            animationSpec = tween(1250),
+            label = "tertiary"
+        )
+        
+
+        if (animPrimary != Color.Transparent || animSecondary != Color.Transparent || animTertiary != Color.Transparent) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        drawRect(color = baseBackgroundColor)
+                        // Top Left (Vibrant/Muted)
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(animSecondary, Color.Transparent),
+                                center = Offset(0f, 0f),
+                                radius = size.width * 0.8f
+                            )
+                        )
+                        // Bottom Right (DarkVibrant/DarkMuted)
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(animPrimary, Color.Transparent),
+                                center = Offset(size.width, size.height),
+                                radius = size.width * 0.8f
+                            )
+                        )
+                        // Bottom Left (Dark / Bridge)
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(baseBackgroundColor, Color.Transparent),
+                                center = Offset(0f, size.height),
+                                radius = size.width * 0.8f
+                            )
+                        )
+                        // Top Right (Under Image - Vibrant/Bright)
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(animTertiary, Color.Transparent),
+                                center = Offset(size.width, 0f),
+                                radius = size.width * 0.8f
+                            )
+                        )
+                    }
             )
-            val animSecondary by animateColorAsState(
-                targetSecondary,
-                animationSpec = tween(1250),
-                label = "secondary"
-            )
-            val animTertiary by animateColorAsState(
-                targetTertiary,
-                animationSpec = tween(1250),
-                label = "tertiary"
-            )
-            
+        }
 
-            if (animPrimary != Color.Transparent || animSecondary != Color.Transparent || animTertiary != Color.Transparent) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            drawRect(color = baseBackgroundColor)
-                            // Top Left (Vibrant/Muted)
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(animSecondary, Color.Transparent),
-                                    center = Offset(0f, 0f),
-                                    radius = size.width * 0.8f
-                                )
-                            )
-                            // Bottom Right (DarkVibrant/DarkMuted)
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(animPrimary, Color.Transparent),
-                                    center = Offset(size.width, size.height),
-                                    radius = size.width * 0.8f
-                                )
-                            )
-                            // Bottom Left (Dark / Bridge)
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(baseBackgroundColor, Color.Transparent),
-                                    center = Offset(0f, size.height),
-                                    radius = size.width * 0.8f
-                                )
-                            )
-                            // Top Right (Under Image - Vibrant/Bright)
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(animTertiary, Color.Transparent),
-                                    center = Offset(size.width, 0f),
-                                    radius = size.width * 0.8f
-                                )
-                            )
-                        }
-                )
-            }
-
-            // Simple fade-in using Coil's built-in transition
-            // Track if image is loaded to prevent black border during transitions
-            var imageLoaded by remember { mutableStateOf(false) }
-            
-            // Only show backdrop if URL is not null - disappears when moving off item
-            if (backdropImageUrl != null) {
-                // Animate backdrop opacity based on drawer state - more transparent when drawer is open
-                val backdropAlpha by animateFloatAsState(
-                    targetValue = if (drawerState.isOpen) 0.7f else 0.95f,
-                    animationSpec = tween(300),
-                    label = "backdropAlpha"
-                )
-                AsyncImage(
-                    model =
-                    ImageRequest
-                        .Builder(context)
-                        .data(backdropImageUrl)
-                        .transitionFactory(CrossFadeFactory(800.milliseconds)) // Smooth 800ms fade-in
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alignment = Alignment.TopEnd,
-                    onSuccess = { 
-                        // Set loaded state for color extraction coordination
-                        // Only set loaded if this is still the current backdrop
-                        if (backdropImageUrl == currentBackdropKey) {
-                            imageLoaded = true
-                            backdropLoaded = true
-                        }
+        // Simple fade-in using Coil's built-in transition
+        // Track if image is loaded to prevent black border during transitions
+        var imageLoaded by remember { mutableStateOf(false) }
+        
+        // Only show backdrop if URL is not null - disappears when moving off item
+        if (backdropImageUrl != null) {
+            // Animate backdrop opacity based on drawer state - more transparent when drawer is open
+            val backdropAlpha by animateFloatAsState(
+                targetValue = if (drawerState.isOpen) 0.7f else 0.95f,
+                animationSpec = tween(300),
+                label = "backdropAlpha"
+            )
+            AsyncImage(
+                model =
+                ImageRequest
+                    .Builder(context)
+                    .data(backdropImageUrl)
+                    .transitionFactory(CrossFadeFactory(800.milliseconds)) // Smooth 800ms fade-in
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopEnd,
+                onSuccess = { 
+                    // Set loaded state for color extraction coordination
+                    // Only set loaded if this is still the current backdrop
+                    if (backdropImageUrl == currentBackdropKey) {
+                        imageLoaded = true
+                        backdropLoaded = true
+                    }
+                },
+                onError = { 
+                    imageLoaded = false
+                    backdropLoaded = false
+                },
+                modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .fillMaxWidth(0.7f) // Occupy 70% width
+                    .aspectRatio(1.77f) // 16:9 aspect ratio
+                    .alpha(backdropAlpha) // Dynamic transparency - more transparent when drawer is open
+                    .graphicsLayer { alpha = backdropAlpha }
+                    .drawWithContent {
+                        // Draw image content first
+                        drawContent()
+                        // Always apply masking - the image is always loaded when this composable is rendered
+                        // The fade-in transition handles the opacity, so masking is safe to apply
+                        // Masking - only applies to the image content via DstIn blend mode
+                        // Left Fade: Transparent -> Black (Left -> Right)
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color.Transparent, Color.Black),
+                                startX = 0f,
+                                endX = size.width * 0.6f
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                        // Bottom Fade: Black -> Transparent (Top -> Bottom)
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black, Color.Transparent),
+                                startY = 0f,
+                                endY = size.height
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
                     },
-                    onError = { 
-                        imageLoaded = false
-                        backdropLoaded = false
-                    },
-                    modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .fillMaxWidth(0.7f) // Occupy 70% width
-                        .aspectRatio(1.77f) // 16:9 aspect ratio
-                        .alpha(backdropAlpha) // Dynamic transparency - more transparent when drawer is open
-                        .graphicsLayer { alpha = backdropAlpha }
-                        .drawWithContent {
-                            // Draw image content first
-                            drawContent()
-                            // Always apply masking - the image is always loaded when this composable is rendered
-                            // The fade-in transition handles the opacity, so masking is safe to apply
-                            // Masking - only applies to the image content via DstIn blend mode
-                            // Left Fade: Transparent -> Black (Left -> Right)
-                            drawRect(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black),
-                                    startX = 0f,
-                                    endX = size.width * 0.6f
-                                ),
-                                blendMode = BlendMode.DstIn
-                            )
-                            // Bottom Fade: Black -> Transparent (Top -> Bottom)
-                            drawRect(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(Color.Black, Color.Transparent),
-                                    startY = 0f,
-                                    endY = size.height
-                                ),
-                                blendMode = BlendMode.DstIn
-                            )
-                        },
-                )
-            }
+            )
         }
 
         NavigationDrawer(
@@ -577,7 +565,7 @@ fun NavDrawer(
                         Modifier
                             .fillMaxHeight()
                             .width(drawerWidth)
-                            .ifElse(!isPlexperience, Modifier.background(drawerBackground)), // Only apply solid background if NOT Plexperience
+                            // Drawer background is transparent for all themes (backdrop shows through)
                     ) {
                         // Even though some must be clicked, focusing on it should clear other focused items
                         val interactionSource = remember { MutableInteractionSource() }
@@ -749,9 +737,7 @@ fun NavDrawer(
                 // Drawer content (The actual screen)
                 CompositionLocalProvider(
                     LocalBackdropHandler provides { url ->
-                        if (isPlexperience) {
-                            backdropImageUrl = url
-                        }
+                        backdropImageUrl = url
                     }
                 ) {
                     DestinationContent(

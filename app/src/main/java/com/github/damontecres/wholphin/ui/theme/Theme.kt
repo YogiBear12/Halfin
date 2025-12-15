@@ -8,7 +8,9 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.BlueThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.BoldBlueThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.GreenThemeColors
-import com.github.damontecres.wholphin.ui.theme.colors.PlexperienceThemeColors
+import com.github.damontecres.wholphin.ui.theme.colors.JellyfinBlueThemeColors
+import com.github.damontecres.wholphin.ui.theme.colors.CatppuccinMacchiatoThemeColors
+import com.github.damontecres.wholphin.ui.theme.colors.NordThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.OledThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.OrangeThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.PurpleThemeColors
@@ -30,7 +32,9 @@ fun WholphinTheme(
             AppThemeColors.ORANGE -> OrangeThemeColors
             AppThemeColors.OLED_BLACK -> OledThemeColors
             AppThemeColors.BOLD_BLUE -> BoldBlueThemeColors
-            AppThemeColors.PLEXPERIENCE -> PlexperienceThemeColors
+            AppThemeColors.JELLYFIN_BLUE -> JellyfinBlueThemeColors
+            AppThemeColors.CATPPUCCIN_MACCHIATO -> CatppuccinMacchiatoThemeColors
+            AppThemeColors.NORD -> NordThemeColors
             AppThemeColors.UNRECOGNIZED -> PurpleThemeColors
         }
 

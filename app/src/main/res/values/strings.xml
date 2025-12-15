@@ -412,7 +412,9 @@
         <item>Orange</item>
         <item>Bold Blue</item>
         <item>Black</item>
-        <item>Plexperience</item>
+        <item>Jellyfin Blue</item>
+        <item>Catppuccin Mocha</item>
+        <item>Nord</item>
     </string-array>
 
     <string-array name="skip_behaviors">
