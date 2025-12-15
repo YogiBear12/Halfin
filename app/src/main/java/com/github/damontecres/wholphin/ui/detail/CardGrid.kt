@@ -368,7 +368,9 @@ fun CardGrid(
             AlphabetButtons(
                 letters = letters,
                 currentLetter = currentLetter,
-                modifier = Modifier.align(Alignment.CenterVertically),
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(end = 8.dp), // Push away from right edge
                 letterClicked = { letter ->
                     scope.launch(ExceptionHandler()) {
                         val jumpPosition =
@@ -456,7 +458,8 @@ fun AlphabetButtons(
     var alphabetPickerFocused by remember { mutableStateOf(false) }
     
     LazyColumn(
-        contentPadding = PaddingValues(4.dp),
+        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = 2.dp), // Add horizontal padding to prevent side clipping
+        verticalArrangement = Arrangement.spacedBy(1.1.dp), // Reduced spacing between letters to fit all on screen
         state = listState,
         modifier =
             modifier
@@ -482,9 +485,9 @@ fun AlphabetButtons(
             Button(
                 modifier =
                     Modifier
-                        .size(24.dp)
+                        .size(14.dp) // Reduced button size to fit all letters on screen
                         .focusRequester(focusRequesters[index]),
-                contentPadding = PaddingValues(2.dp),
+                contentPadding = PaddingValues(0.dp), // No padding to maximize text space
                 interactionSource = interactionSource,
                 onClick = {
                     letterClicked.invoke(letters[index])
@@ -515,6 +518,7 @@ fun AlphabetButtons(
                     color = color,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = MaterialTheme.typography.bodyMedium.fontSize * 0.85f), // Reduce font size by ~15%
                 )
             }
         }
