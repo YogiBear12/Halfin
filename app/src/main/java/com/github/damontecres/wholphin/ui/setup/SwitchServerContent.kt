@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +10,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -33,6 +38,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -57,6 +63,7 @@ import org.jellyfin.sdk.model.api.PublicSystemInfo
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.graphics.Color
+import com.github.damontecres.wholphin.ui.FontAwesome
 
 @Composable
 fun SwitchServerContent(
@@ -82,14 +89,27 @@ fun SwitchServerContent(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    // Center the content like the Select User screen
                     .align(Alignment.Center)
                     .padding(16.dp),
         ) {
-            Text(
-                text = stringResource(R.string.select_server),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            // Match SwitchUser header height (title + subtitle) to align icons vertically across screens
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.select_server),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                // Invisible subtitle placeholder to mirror the server name line on the Select User screen
+                Text(
+                    text = "Server placeholder",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.Transparent,
+                )
+            }
             
             // Horizontal scrollable list of server icons - centered
             Box(
@@ -138,6 +158,12 @@ fun SwitchServerContent(
                     }
                 }
             }
+            // Non-focusable spacer to mirror the space occupied by the "Switch Servers" button
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp), // approximate TV button height
+            )
         }
         
         // Delete server dialog
