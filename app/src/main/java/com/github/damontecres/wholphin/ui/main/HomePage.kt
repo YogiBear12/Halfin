@@ -297,61 +297,12 @@ fun HomePageContent(
         }
     }
     
-    val isPlexperience = appThemeColors == AppThemeColors.PLEXPERIENCE
-    var dynamicColorPrimary by remember { mutableStateOf(Color.Transparent) }
-    var dynamicColorSecondary by remember { mutableStateOf(Color.Transparent) }
-    
-    if (isPlexperience) {
-        // Plexperience uses NavDrawer for background
-        LaunchedEffect(backdropImageUrl) {
-             onBackdropChange(backdropImageUrl)
-        }
-    } else {
-        // Non-Plexperience local extraction (if any) or other logic
+    // All themes now use NavDrawer for background (backdrop and color extraction)
+    LaunchedEffect(backdropImageUrl) {
+         onBackdropChange(backdropImageUrl)
     }
 
     Box(modifier = modifier) {
-        val baseBackgroundColor = MaterialTheme.colorScheme.background
-        
-        // Legacy / Non-Plexperience Background Logic
-        if (!isPlexperience) {
-            val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
-            val gradientColor by animateColorAsState(targetPrimary, label = "gradient")
-            
-            AsyncImage(
-                model =
-                    ImageRequest
-                        .Builder(context)
-                        .data(backdropImageUrl)
-                        .transitionFactory(CrossFadeFactory(250.milliseconds))
-                        .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                alignment = Alignment.TopEnd,
-                modifier =
-                    Modifier
-                        .fillMaxHeight(.7f)
-                        .fillMaxWidth(.7f)
-                        .alpha(.75f)
-                        .align(Alignment.TopEnd)
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, baseBackgroundColor),
-                                    startY = size.height * .33f,
-                                ),
-                            )
-                            drawRect(
-                                Brush.horizontalGradient(
-                                    colors = listOf(baseBackgroundColor, Color.Transparent),
-                                    startX = 0f,
-                                    endX = size.width * .5f,
-                                ),
-                            )
-                        },
-            )
-        }
 
         Column(modifier = Modifier.fillMaxSize()) {
             if (addTopSpacer) {

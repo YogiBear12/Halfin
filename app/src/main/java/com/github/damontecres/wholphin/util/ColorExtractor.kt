@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
- * Data class to hold the three extracted colors for Plexperience theme
+ * Data class to hold the three extracted colors for dynamic background rendering
  */
 data class ExtractedColors(
     val primary: Color,
@@ -33,7 +33,7 @@ data class ExtractedColors(
 private val colorCache = LruCache<String, ExtractedColors>(50)
 
 /**
- * Extracts colors from a backdrop image URL for use in the Plexperience theme.
+ * Extracts colors from a backdrop image URL for use in dynamic background rendering.
  * 
  * Performance optimizations:
  * - Uses LRU cache to avoid re-extracting colors for the same image
