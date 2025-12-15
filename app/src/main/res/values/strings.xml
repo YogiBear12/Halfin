@@ -68,7 +68,7 @@
     <string name="more">More</string>
     <string name="movies">Movies</string>
     <string name="name">Name</string>
-    <string name="next_up">Next Up</string>
+    <string name="next_up">Next up</string>
     <string name="no_data">No data</string>
     <string name="no_results">No results</string>
     <string name="no_scheduled_recordings">No scheduled recordings</string>
@@ -92,7 +92,7 @@
     <string name="recently_added_in">Recently added in %1$s</string>
     <string name="recently_added">Recently added</string>
     <string name="recently_recorded">Recently Recorded</string>
-    <string name="recently_released">Recently Released</string>
+    <string name="recently_released">Recently released</string>
     <string name="recommended">Recommended</string>
     <string name="record_program">Record Program</string>
     <string name="record_series">Record Series</string>
@@ -124,7 +124,7 @@
     <string name="suggestions">Suggestions</string>
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
-    <string name="top_unwatched">Top Rated Unwatched</string>
+    <string name="top_unwatched">Top rated unwatched</string>
     <string name="trailer">Trailer</string>
     <string name="trailers">Trailers</string>
     <string name="tv_dvr_schedule">DVR Schedule</string>
