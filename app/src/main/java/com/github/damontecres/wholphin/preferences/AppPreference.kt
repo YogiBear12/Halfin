@@ -429,7 +429,7 @@ sealed interface AppPreference<Pref, T> {
         val ThemeColors =
             AppChoicePreference<AppPreferences, AppThemeColors>(
                 title = R.string.app_theme,
-                defaultValue = AppThemeColors.PURPLE,
+                defaultValue = AppThemeColors.JELLYFIN_BLUE,
                 getter = { it.interfacePreferences.appThemeColors },
                 setter = { prefs, value ->
                     prefs.updateInterfacePreferences { appThemeColors = value }
@@ -659,17 +659,16 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
-        val BackdropStylePref =
-            AppChoicePreference<AppPreferences, BackdropStyle>(
-                title = R.string.backdrop_display,
-                defaultValue = BackdropStyle.BACKDROP_DYNAMIC_COLOR,
-                getter = { it.interfacePreferences.backdropStyle },
+        val ExtractColorsFromBackdrop =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.extract_colors_from_backdrop,
+                defaultValue = true,
+                getter = { it.interfacePreferences.extractColorsFromBackdrop },
                 setter = { prefs, value ->
-                    prefs.updateInterfacePreferences { backdropStyle = value }
+                    prefs.updateInterfacePreferences { extractColorsFromBackdrop = value }
                 },
-                displayValues = R.array.backdrop_style_options,
-                indexToValue = { BackdropStyle.forNumber(it) },
-                valueToIndex = { it.number },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
             )
 
         val OneClickPause =
@@ -919,10 +918,10 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ExtractColorsFromBackdrop,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
-                        AppPreference.BackdropStylePref,
                     ),
             ),
         )

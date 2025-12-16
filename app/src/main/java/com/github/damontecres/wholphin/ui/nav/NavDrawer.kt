@@ -322,6 +322,7 @@ fun NavDrawer(
     // Initialize with generic colors to prevent fade to black/transparent on first load
     // These will be replaced by extracted colors when available
     // Use theme-aware colors from MaterialTheme.colorScheme
+    val baseBackgroundColor = MaterialTheme.colorScheme.background
     val genericPrimary = MaterialTheme.colorScheme.surfaceVariant
     val genericSecondary = MaterialTheme.colorScheme.surface
     val genericTertiary = MaterialTheme.colorScheme.surfaceVariant
@@ -363,7 +364,8 @@ fun NavDrawer(
     // Extract colors when stable URL is set. For cached colors, this returns immediately.
     // For new extractions, the function will load the image and extract colors.
     // Also depend on backdropImageUrl to ensure cached colors apply when navigating back
-    LaunchedEffect(stableBackdropUrl, backdropImageUrl) {
+    val extractColorsEnabled = preferences.appPreferences.interfacePreferences.extractColorsFromBackdrop
+    LaunchedEffect(stableBackdropUrl, backdropImageUrl, extractColorsEnabled) {
         val currentStableUrl = stableBackdropUrl
         val currentBackdropUrl = backdropImageUrl
         
@@ -375,21 +377,28 @@ fun NavDrawer(
             if (backdropImageUrl == currentStableUrl) {
                 backdropReadyForColors = true
                 
-                // Extract colors for the stable backdrop URL
-                // If colors are cached, this returns immediately
-                // If not cached, it will load the image and extract colors
-                val extractedColors = extractColorsFromBackdrop(currentStableUrl, context)
-                
-                // Only update colors if:
-                // 1. Extraction succeeded
-                // 2. The backdrop URL hasn't changed during extraction (still the current stable one)
-                // This keeps previous colors visible during extraction and prevents fade to black/transparent
-                if (extractedColors != null && backdropImageUrl == currentStableUrl) {
-                    dynamicColorPrimary = extractedColors.primary
-                    dynamicColorSecondary = extractedColors.secondary
-                    dynamicColorTertiary = extractedColors.tertiary
+                if (extractColorsEnabled) {
+                    // Extract colors for the stable backdrop URL
+                    // If colors are cached, this returns immediately
+                    // If not cached, it will load the image and extract colors
+                    val extractedColors = extractColorsFromBackdrop(currentStableUrl, context)
+                    
+                    // Only update colors if:
+                    // 1. Extraction succeeded
+                    // 2. The backdrop URL hasn't changed during extraction (still the current stable one)
+                    // This keeps previous colors visible during extraction and prevents fade to black/transparent
+                    if (extractedColors != null && backdropImageUrl == currentStableUrl) {
+                        dynamicColorPrimary = extractedColors.primary
+                        dynamicColorSecondary = extractedColors.secondary
+                        dynamicColorTertiary = extractedColors.tertiary
+                    }
+                    // If extraction fails or backdrop changed, colors remain unchanged (previous colors stay visible)
+                } else {
+                    // Color extraction disabled - use background color for all gradients
+                    dynamicColorPrimary = baseBackgroundColor.copy(alpha = 0.4f)
+                    dynamicColorSecondary = baseBackgroundColor.copy(alpha = 0.4f)
+                    dynamicColorTertiary = baseBackgroundColor.copy(alpha = 0.35f)
                 }
-                // If extraction fails or backdrop changed, colors remain unchanged (previous colors stay visible)
             }
         } else if (currentStableUrl == null && currentBackdropUrl == null) {
             // User has navigated away - backdrop URL is null and stable
@@ -417,7 +426,6 @@ fun NavDrawer(
     Box(modifier = modifier.fillMaxSize()) {
         // Background Rendering (Behind content, and extending behind drawer)
         // Universal backdrop and color extraction for all themes
-        val baseBackgroundColor = MaterialTheme.colorScheme.background
 
         val targetPrimary = if (dynamicColorPrimary != Color.Transparent) dynamicColorPrimary else Color.Transparent
         val targetSecondary = if (dynamicColorSecondary != Color.Transparent) dynamicColorSecondary else Color.Transparent

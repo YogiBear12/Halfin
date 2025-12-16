@@ -194,4 +194,13 @@ suspend fun upgradeApp(
             it.update { updateUrl = AppPreference.UpdateUrl.defaultValue }
         }
     }
+    // Migration: Set extractColorsFromBackdrop to true for all existing users upgrading
+    // This ensures existing users get color extraction enabled (matching previous behavior)
+    if (previous.isEqualOrBefore(Version.fromString("0.3.6-3"))) {
+        appPreferences.updateData {
+            it.updateInterfacePreferences {
+                extractColorsFromBackdrop = AppPreference.ExtractColorsFromBackdrop.defaultValue
+            }
+        }
+    }
 }
