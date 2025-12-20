@@ -158,7 +158,6 @@ fun RecommendedContent(
                 },
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
-                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
                 contentStartPadding = 16.dp, // Match homepage padding
                 contentTopPadding = 24.dp,

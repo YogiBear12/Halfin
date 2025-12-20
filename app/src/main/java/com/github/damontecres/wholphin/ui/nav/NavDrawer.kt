@@ -364,7 +364,8 @@ fun NavDrawer(
     // Extract colors when stable URL is set. For cached colors, this returns immediately.
     // For new extractions, the function will load the image and extract colors.
     // Also depend on backdropImageUrl to ensure cached colors apply when navigating back
-    val extractColorsEnabled = preferences.appPreferences.interfacePreferences.extractColorsFromBackdrop
+    val backdropStyle = preferences.appPreferences.interfacePreferences.backdropStyle
+    val extractColorsEnabled = backdropStyle == com.github.damontecres.wholphin.preferences.BackdropStyle.BACKDROP_DYNAMIC_COLOR || backdropStyle == com.github.damontecres.wholphin.preferences.BackdropStyle.UNRECOGNIZED
     LaunchedEffect(stableBackdropUrl, backdropImageUrl, extractColorsEnabled) {
         val currentStableUrl = stableBackdropUrl
         val currentBackdropUrl = backdropImageUrl

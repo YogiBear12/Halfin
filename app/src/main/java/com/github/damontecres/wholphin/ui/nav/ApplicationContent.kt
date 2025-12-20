@@ -202,7 +202,6 @@ fun ApplicationContent(
                         DestinationContent(
                             destination = key,
                             preferences = preferences,
-                            onClearBackdrop = viewModel::clearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else if (user != null && server != null) {
@@ -211,7 +210,6 @@ fun ApplicationContent(
                             preferences = preferences,
                             user = user,
                             server = server,
-                            onClearBackdrop = viewModel::clearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {

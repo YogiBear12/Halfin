@@ -42,11 +42,11 @@ import timber.log.Timber
 fun DestinationContent(
     destination: Destination,
     preferences: UserPreferences,
-    onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val onClearBackdrop = LocalBackdropHandler.current
     if (destination.fullScreen) {
-        LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
     }
     when (destination) {
         is Destination.Home -> {
@@ -127,7 +127,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.BOX_SET -> {
-                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
                     CollectionFolderBoxSet(
                         preferences = preferences,
                         itemId = destination.itemId,
@@ -139,7 +139,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.PLAYLIST -> {
-                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
                     PlaylistDetails(
                         destination = destination,
                         modifier = modifier,
@@ -147,7 +147,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.COLLECTION_FOLDER -> {
-                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -159,7 +159,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.FOLDER -> {
-                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -171,7 +171,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.USER_VIEW -> {
-                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -183,7 +183,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.PERSON -> {
-                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
                     PersonPage(
                         preferences,
                         destination,
@@ -199,7 +199,7 @@ fun DestinationContent(
         }
 
         is Destination.FilteredCollection -> {
-            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
             CollectionFolderGeneric(
                 preferences = preferences,
                 itemId = destination.itemId,
@@ -213,7 +213,7 @@ fun DestinationContent(
         }
 
         is Destination.Recordings -> {
-            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
             CollectionFolderRecordings(
                 preferences,
                 destination.itemId,
@@ -223,7 +223,7 @@ fun DestinationContent(
         }
 
         is Destination.ItemGrid -> {
-            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
             ItemGrid(
                 destination,
                 modifier,
@@ -231,7 +231,7 @@ fun DestinationContent(
         }
 
         Destination.Favorites -> {
-            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
             FavoritesPage(
                 preferences = preferences,
                 modifier = modifier,
@@ -247,7 +247,7 @@ fun DestinationContent(
         }
 
         Destination.Search -> {
-            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                        LaunchedEffect(Unit) { onClearBackdrop.invoke(null) }
             SearchPage(
                 userPreferences = preferences,
                 modifier = modifier,

@@ -167,7 +167,7 @@ fun PlaybackPage(
 
             val subtitleDelay = currentPlayback?.subtitleDelay ?: Duration.ZERO
             LaunchedEffect(subtitleDelay) {
-                (player as? MpvPlayer)?.subtitleDelay = subtitleDelay
+                (player as? MpvPlayer)?.subtitleDelay = subtitleDelay.inWholeSeconds.toDouble()
             }
 
             val presentationState = rememberPresentationState(player, false)

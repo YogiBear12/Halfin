@@ -91,7 +91,7 @@ class AppPreferencesSerializer
                                 navDrawerSwitchOnFocus =
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
-                                extractColorsFromBackdrop = AppPreference.ExtractColorsFromBackdrop.defaultValue
+                                backdropStyle = AppPreference.BackdropStylePref.defaultValue
 
                                 subtitlesPreferences =
                                     SubtitlePreferences

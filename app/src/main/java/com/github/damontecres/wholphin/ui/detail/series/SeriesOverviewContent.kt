@@ -102,6 +102,9 @@ fun SeriesOverviewContent(
     val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
     // Set backdrop URL to series backdrop (NOT episode backdrop) - this should NOT change when scrolling episodes
+    val backdropImageUrl = remember(series) {
+        imageUrlService.getItemImageUrl(series, ImageType.BACKDROP)
+    }
     LaunchedEffect(backdropImageUrl) {
         onBackdropChange(backdropImageUrl)
     }
