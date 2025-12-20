@@ -23,6 +23,9 @@
   - Experimental MPV
 
 ## Features of This Fork
+>[!NOTE]
+> As of 0.3.7, many of the customizations introduced here have been ported into Wholphin. Halfin will continue to exist for now, as a way for me to develop and refine new features before sumbmitting them to Wholphin
+
 - Dynamic backgrounds created by extracting color palettes from media backdrops
 - Transparent navigation drawer and header, allowing the backdrops and colors to reach the edges of the screen
 - Series thumbnails for Continue Watching and Next Up rows

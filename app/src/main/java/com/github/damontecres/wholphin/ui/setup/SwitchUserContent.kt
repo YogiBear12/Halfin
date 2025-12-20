@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.setup
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -36,7 +34,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -89,11 +86,6 @@ fun SwitchUserContent(
     var switchUserWithPin by remember { mutableStateOf<JellyfinUser?>(null) }
 
     currentServer?.let { server ->
-        // Create API client for fetching user images (no auth needed for public user images)
-        val apiClient = remember(server.url) {
-            viewModel.jellyfin.createApi(server.url)
-        }
-        
         Box(
             modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
         ) {
@@ -141,7 +133,6 @@ fun SwitchUserContent(
                         viewModel.navigationManager.navigateTo(Destination.ServerList)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    apiClient = apiClient, // Pass apiClient to UserList for user images
                 )
             }
         }
@@ -171,7 +162,7 @@ fun SwitchUserContent(
                         Modifier
                             .focusGroup()
                             .padding(16.dp)
-                            .fillMaxWidth(.66f),
+                            .fillMaxWidth(.4f),
                 ) {
                     if (useQuickConnect) {
                         if (quickConnect == null && userState !is LoadingState.Error) {
