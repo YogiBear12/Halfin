@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
@@ -70,10 +71,7 @@ fun CollectionFolderMovie(
     LaunchedEffect(selectedTabIndex) {
         logTab("movie", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
-        // Clear backdrop when navigating to Library, Collections, or Genres tabs
-        if (selectedTabIndex in 1..3) {
-            onBackdropChange(null)
-        }
+        preferencesViewModel.backdropService.clearBackdrop()
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
@@ -126,8 +124,11 @@ fun CollectionFolderMovie(
                     },
                     itemId = destination.itemId,
                     initialFilter =
-                        GetItemsFilter(
-                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    includeItemTypes = listOf(BaseItemKind.MOVIE),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,
@@ -154,8 +155,11 @@ fun CollectionFolderMovie(
                     },
                     itemId = destination.itemId,
                     initialFilter =
-                        GetItemsFilter(
-                            includeItemTypes = listOf(BaseItemKind.BOX_SET),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    includeItemTypes = listOf(BaseItemKind.BOX_SET),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,

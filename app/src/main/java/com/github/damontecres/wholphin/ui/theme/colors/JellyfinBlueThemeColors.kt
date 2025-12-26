@@ -7,7 +7,7 @@ import com.github.damontecres.wholphin.ui.theme.ThemeColors
 
 val JellyfinBlueThemeColors =
     object : ThemeColors {
-        val primaryLight = Color(0xFF00A4DC) // Jellyfin Blue
+        val primaryLight = Color(0xFF00A4DC) // Jellyfin Blue (changed from 0xFF405F90)
         val onPrimaryLight = Color(0xFFFFFFFF)
         val primaryContainerLight = Color(0xFFD6E3FF)
         val onPrimaryContainerLight = Color(0xFF274777)
@@ -43,7 +43,7 @@ val JellyfinBlueThemeColors =
         val surfaceContainerHighLight = Color(0xFFE8E7EF)
         val surfaceContainerHighestLight = Color(0xFFE3E2E9)
 
-        val primaryDark = Color(0xFF00A4DC) // Jellyfin Blue
+        val primaryDark = Color(0xFF00A4DC) // Jellyfin Blue (changed from 0xFFAAC7FF)
         val onPrimaryDark = Color(0xFF09305F)
         val primaryContainerDark = Color(0xFF274777)
         val onPrimaryContainerDark = Color(0xFFD6E3FF)
@@ -51,7 +51,7 @@ val JellyfinBlueThemeColors =
         val onSecondaryDark = Color(0xFF283141)
         val secondaryContainerDark = Color(0xFF3E4759)
         val onSecondaryContainerDark = Color(0xFFDAE2F9)
-        val tertiaryDark = Color(0xFFCABEFF)
+        val tertiaryDark = Color(0xFFBECEFF)
         val onTertiaryDark = Color(0xFF31285F)
         val tertiaryContainerDark = Color(0xFF483F77)
         val onTertiaryContainerDark = Color(0xFFE6DEFF)
@@ -59,10 +59,10 @@ val JellyfinBlueThemeColors =
         val onErrorDark = Color(0xFF690005)
         val errorContainerDark = Color(0xFF93000A)
         val onErrorContainerDark = Color(0xFFFFDAD6)
-        val backgroundDark = Color(0xFF10131A)
+        val backgroundDark = Color(0xFF111318)
         val onBackgroundDark = Color(0xFFE2E2E9)
-        val surfaceDark = Color(0xFF10131A)
-        val onSurfaceDark = Color(0xFFE2E2E9)
+        val surfaceDark = Color(0xFF121318)
+        val onSurfaceDark = Color(0xFFE3E2E9)
         val surfaceVariantDark = Color(0xFF44474F)
         val onSurfaceVariantDark = Color(0xFFC4C6D0)
         val outlineDark = Color(0xFF8E9099)
@@ -71,7 +71,7 @@ val JellyfinBlueThemeColors =
         val inverseSurfaceDark = Color(0xFFE3E2E9)
         val inverseOnSurfaceDark = Color(0xFF2F3036)
         val inversePrimaryDark = Color(0xFF00A4DC) // Jellyfin Blue
-        val surfaceDimDark = Color(0xFF10131A)
+        val surfaceDimDark = Color(0xFF121318)
         val surfaceBrightDark = Color(0xFF38393F)
         val surfaceContainerLowestDark = Color(0xFF0D0E13)
         val surfaceContainerLowDark = Color(0xFF1A1B21)
@@ -201,4 +201,3 @@ val JellyfinBlueThemeColors =
                 border = inversePrimaryDark,
             )
     }
-

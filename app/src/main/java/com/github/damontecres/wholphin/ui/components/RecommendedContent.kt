@@ -156,9 +156,13 @@ fun RecommendedContent(
                 onLongClickItem = { position, item ->
                     moreDialog.makePresent(RowColumnItem(position, item))
                 },
-                onFocusPosition = onFocusPosition,
+                onClickPlay = { _, item ->
+                    viewModel.navigationManager.navigateTo(item.destination())
+                },
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
+                onFocusPosition = onFocusPosition,
                 contentStartPadding = 16.dp, // Match homepage padding
                 contentTopPadding = 24.dp,
             )
