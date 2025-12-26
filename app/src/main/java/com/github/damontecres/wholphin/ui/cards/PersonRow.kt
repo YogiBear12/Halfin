@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,6 +23,8 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.ifElse
 
 @Composable
@@ -60,7 +63,8 @@ fun PersonRow(
                     onLongClick = { onLongClick?.invoke(index, item) },
                     modifier =
                         Modifier
-                            .width(120.dp)
+                            .width(Cards.height2x3 * AspectRatios.TALL)
+                            .height(Cards.height2x3)
                             .ifElse(index == 0, Modifier.focusRequester(firstFocus))
                             .animateItem(),
                 )

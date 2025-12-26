@@ -24,7 +24,7 @@ fun SeriesName(
     Text(
         text = seriesName ?: "",
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.headlineMedium,
+        style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,

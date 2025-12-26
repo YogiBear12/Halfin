@@ -47,26 +47,26 @@ fun EpisodeDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        SeriesName(dto.seriesName, Modifier.fillMaxWidth(.75f))
-        EpisodeName(dto, Modifier.fillMaxWidth(.75f))
+        SeriesName(dto.seriesName, Modifier.fillMaxWidth(.75f).padding(start = 8.dp))
+        EpisodeName(dto, Modifier.fillMaxWidth(.75f).padding(start = 8.dp))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 8.dp
-            EpisodeQuickDetails(dto)
+            EpisodeQuickDetails(dto, Modifier.padding(start = 8.dp))
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
-                modifier = Modifier.padding(bottom = padding),
+                modifier = Modifier.padding(start = 8.dp, bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,
                     style = MaterialTheme.typography.bodyLarge,
                     fontStyle = FontStyle.Italic,
-                    modifier = Modifier,
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
 
@@ -83,6 +83,7 @@ fun EpisodeDetailsHeader(
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
                     interactionSource = interactionSource,
+                    modifier = Modifier.fillMaxWidth(0.7f).padding(start = 8.dp),
                 )
             }
             ep.data.people
@@ -93,6 +94,7 @@ fun EpisodeDetailsHeader(
                         text = stringResource(R.string.directed_by, it),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
         }

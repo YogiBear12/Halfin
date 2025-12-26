@@ -6,8 +6,10 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +25,7 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
@@ -61,7 +64,7 @@ fun PersonCard(
         modifier = modifier,
     ) {
         Card(
-            modifier = Modifier,
+            modifier = Modifier.fillMaxWidth(),
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
@@ -82,7 +85,7 @@ fun PersonCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(AspectRatios.TALL), // TODO,
+                        .aspectRatio(AspectRatios.TALL),
             )
         }
         Column(
