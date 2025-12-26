@@ -97,8 +97,8 @@ import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
-import com.github.damontecres.wholphin.ui.nav.LocalBackdropHandler
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.nav.Destination
 import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
@@ -181,8 +181,12 @@ fun HomePage(
                             items = dialogItems,
                         )
                 },
+                onClickPlay = { _, item ->
+                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                },
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
                 contentStartPadding = 16.dp,
                 contentTopPadding = 24.dp,
@@ -221,7 +225,9 @@ fun HomePageContent(
     appThemeColors: AppThemeColors,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
+    onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
+    onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
@@ -230,8 +236,6 @@ fun HomePageContent(
     addTopSpacer: Boolean = false,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val onBackdropChange = LocalBackdropHandler.current
     val firstRow =
         remember {
             homeRows
@@ -272,38 +276,12 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
-    val imageUrlService = LocalImageUrlService.current
-    var backdropImageUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(focusedItem) {
-        // Keep previous backdrop URL until new one is ready to prevent color reset during navigation
-        // Only set to null when navigating away from items (focusedItem becomes null and stays null)
-        val newBackdropUrl = focusedItem?.let { imageUrlService.getItemImageUrl(it, ImageType.BACKDROP) }
-        
-        if (newBackdropUrl == null) {
-            // User navigated away - allow backdrop to fade out before resetting
-            // Small delay to allow smooth fade-out transition
-            delay(200)
-            // Only reset if still null (user hasn't navigated to another item)
-            if (focusedItem == null) {
-                backdropImageUrl = null
-                onBackdropChange?.invoke(null)
-            }
-        } else {
-            // User navigated to a new item - update backdrop URL
-            // Small delay to allow previous backdrop to start fading out smoothly
-            delay(100)
-            backdropImageUrl = newBackdropUrl
-            onBackdropChange?.invoke(newBackdropUrl)
-        }
-    }
-    
-    // All themes now use NavDrawer for background (backdrop and color extraction)
-    LaunchedEffect(backdropImageUrl) {
-         onBackdropChange(backdropImageUrl)
+        focusedItem?.let(onUpdateBackdrop)
     }
 
+    val imageUrlService = LocalImageUrlService.current
     Box(modifier = modifier) {
-
         Column(modifier = Modifier.fillMaxSize()) {
             if (addTopSpacer) {
                 Spacer(Modifier.height(64.dp)) // Match the tab row height from recommended screen

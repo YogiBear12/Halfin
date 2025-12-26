@@ -140,8 +140,9 @@ fun SeasonCard(
     } else {
         focusedAfterDelay = false
     }
-    val width = imageHeight * aspectRatio
-    val height = imageWidth * (1f / aspectRatio)
+    val aspectRationToUse = aspectRatio.coerceAtLeast(AspectRatios.MIN)
+    val width = imageHeight * aspectRationToUse
+    val height = imageWidth * (1f / aspectRationToUse)
     Column(
         verticalArrangement = Arrangement.spacedBy(spaceBetween),
         modifier = modifier.size(width, height),
@@ -150,7 +151,7 @@ fun SeasonCard(
             modifier =
                 Modifier
                     .size(imageWidth, imageHeight)
-                    .aspectRatio(aspectRatio),
+                    .aspectRatio(aspectRationToUse),
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
